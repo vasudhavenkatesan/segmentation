@@ -1,2 +1,2 @@
-# segmentation
-Semantic segmentation using U-net
+# Semantic Segmentation
+Semantic segmentation of medical images using U-net
