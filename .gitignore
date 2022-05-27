@@ -1,5 +1,5 @@
 # Ignore the node_modules directory
-dataset/
+dataset/data/
 
 # Ignore Logs
 logs
