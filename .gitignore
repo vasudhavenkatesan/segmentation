@@ -1,0 +1,12 @@
+# Ignore the node_modules directory
+dataset/
+
+# Ignore Logs
+logs
+*.log
+
+# Ignore the build directory
+/dist
+
+# Ignore IDE specific files
+.idea/
