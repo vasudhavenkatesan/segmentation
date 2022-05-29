@@ -6,6 +6,7 @@ import torch
 import torchvision
 from torch.utils.data import Dataset, DataLoader
 import logging
+from augmentation import transforms
 
 
 def get_file_list_from_dir(filepath):
@@ -19,18 +20,25 @@ def get_file_list_from_dir(filepath):
 
 
 class Hdf5Dataset(Dataset):
-    def __init__(self, filepath, phase, load_data, data_cache_size=3):
+    def __init__(self, filepath, dimension, phase, load_data, data_cache_size=3, transforms=None):
         logging.info('Initialising dataset from HDF5 files')
         self.images = []
         self.masks = []
+        self.dimension = dimension
         self.initialise_data(self, filepath)
         self.data_size = self.images.__len__()
         logging.info('Performing transform on dataset')
         self.load_data = load_data
         self.cache_size = data_cache_size
+        self.transform = transforms
+        self.__getitem__(1)
 
     def __getitem__(self, index):
-        return self.images[index], self.masks[index]
+        if self.transform:
+            print(f'Before padding - {self.images[index].shape}')
+            self.images[index] = transforms.padding(self.images[index], self.dimension, 0)
+            print(self.images[index].shape)
+            return self.images[index], self.masks[index]
 
     def __len__(self):
         return self.data_size
