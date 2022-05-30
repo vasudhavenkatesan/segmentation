@@ -31,13 +31,12 @@ class Hdf5Dataset(Dataset):
         self.load_data = load_data
         self.cache_size = data_cache_size
         self.transform = transforms
-        self.__getitem__(1)
+        for i in range(0, 9):
+            self.__getitem__(i)
 
     def __getitem__(self, index):
         if self.transform:
-            print(f'Before padding - {self.images[index].shape}')
             self.images[index] = transforms.padding(self.images[index], self.dimension, 0)
-            print(self.images[index].shape)
             return self.images[index], self.masks[index]
 
     def __len__(self):
