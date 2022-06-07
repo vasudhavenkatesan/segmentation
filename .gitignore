@@ -1,6 +1,6 @@
 # Ignore the node_modules directory
 dataset/data/
-dataset/_pycache_/
+__pycache__/
 
 # Ignore Logs
 logs

@@ -20,23 +20,20 @@ def get_file_list_from_dir(filepath):
 
 
 class Hdf5Dataset(Dataset):
-    def __init__(self, filepath, dimension, phase, load_data, data_cache_size=3, transforms=None):
+    def __init__(self, filepath, dimension, phase, data_cache_size=3, transform=None):
         logging.info('Initialising dataset from HDF5 files')
         self.images = []
         self.masks = []
         self.dimension = dimension
         self.initialise_data(self, filepath)
         self.data_size = self.images.__len__()
-        logging.info('Performing transform on dataset')
-        self.load_data = load_data
         self.cache_size = data_cache_size
-        self.transform = transforms
-        for i in range(0, 9):
-            self.__getitem__(i)
+        self.transform = transform
 
     def __getitem__(self, index):
         if self.transform:
             self.images[index] = transforms.padding(self.images[index], self.dimension, 0)
+            self.masks[index] = transforms.padding((self.masks[index], self.dimension, 0))
             return self.images[index], self.masks[index]
 
     def __len__(self):
@@ -50,9 +47,9 @@ class Hdf5Dataset(Dataset):
             with h5py.File(file, "r") as image_file:
                 group = image_file['ITKImage']
                 subgroup = group['0']
-                self.images.append(np.array(subgroup['VoxelData']))
+                self.images.append(torch.tensor(np.array(subgroup['VoxelData'])))
             with h5py.File(mask, "r") as mask_file:
                 group = mask_file['ITKImage']
                 subgroup = group['0']
-                self.masks.append(np.array(subgroup['VoxelData']))
+                self.masks.append(torch.tensor(np.array(subgroup['VoxelData'])))
         logging.info('Completed initialisation')
