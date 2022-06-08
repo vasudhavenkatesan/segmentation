@@ -1,10 +1,10 @@
 from pathlib import Path
 
 import h5py
+import numpy
 import numpy as np
 import torch
-import torchvision
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset
 import logging
 from augmentation import transforms
 
@@ -20,14 +20,12 @@ def get_file_list_from_dir(filepath):
 
 
 class Hdf5Dataset(Dataset):
-    def __init__(self, filepath, dimension, phase, data_cache_size=3, transform=None):
+    def __init__(self, filepath, transform=None):
         logging.info('Initialising dataset from HDF5 files')
         self.images = []
         self.masks = []
-        self.dimension = dimension
-        self.initialise_data(self, filepath)
+        self.create_dataset(self, filepath)
         self.data_size = self.images.__len__()
-        self.cache_size = data_cache_size
         self.transform = transform
 
     def __getitem__(self, index):
@@ -35,21 +33,23 @@ class Hdf5Dataset(Dataset):
             self.images[index] = transforms.padding(self.images[index], self.dimension, 0)
             self.masks[index] = transforms.padding((self.masks[index], self.dimension, 0))
             return self.images[index], self.masks[index]
+        else:
+            return self.images[index], self.masks[index]
 
     def __len__(self):
         return self.data_size
 
     @staticmethod
-    def initialise_data(self, dirpath):
+    def create_dataset(self, dirpath):
         paths = get_file_list_from_dir(dirpath)
         for file in paths:
             mask = dirpath + '/' + file.name.rpartition('img')[0] + 'mask.h5'
             with h5py.File(file, "r") as image_file:
                 group = image_file['ITKImage']
                 subgroup = group['0']
-                self.images.append(torch.tensor(np.array(subgroup['VoxelData'])))
+                self.images.append(torch.from_numpy(np.array(subgroup['VoxelData'])))
             with h5py.File(mask, "r") as mask_file:
                 group = mask_file['ITKImage']
                 subgroup = group['0']
-                self.masks.append(torch.tensor(np.array(subgroup['VoxelData'])))
+                self.masks.append(torch.from_numpy(np.array(subgroup['VoxelData']).astype(numpy.float32)))
         logging.info('Completed initialisation')
