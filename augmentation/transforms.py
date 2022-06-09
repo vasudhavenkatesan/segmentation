@@ -1,4 +1,5 @@
 import numpy as np
+import torch
 
 
 # Add padding to the 3D data
@@ -16,3 +17,7 @@ def calc_size_for_padding(reqd_dim, data_dim):
     l_size = (reqd_dim - data_dim) // 2
     r_size = (reqd_dim - (data_dim + l_size))
     return l_size, r_size
+
+
+def resize_image(reqd_dim, input):
+    return input[0:reqd_dim[0], 0:reqd_dim[1], 0:reqd_dim[2]]

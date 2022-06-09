@@ -20,21 +20,23 @@ def get_file_list_from_dir(filepath):
 
 
 class Hdf5Dataset(Dataset):
-    def __init__(self, filepath, transform=None):
+    def __init__(self, filepath, image_dim, transform=None):
         logging.info('Initialising dataset from HDF5 files')
         self.images = []
         self.masks = []
         self.create_dataset(self, filepath)
         self.data_size = self.images.__len__()
         self.transform = transform
+        self.dimension = image_dim
 
     def __getitem__(self, index):
-        if self.transform:
-            self.images[index] = transforms.padding(self.images[index], self.dimension, 0)
-            self.masks[index] = transforms.padding((self.masks[index], self.dimension, 0))
-            return self.images[index], self.masks[index]
-        else:
-            return self.images[index], self.masks[index]
+        # if self.transform:
+        self.images[index] = transforms.resize_image(self.dimension, self.images[index])
+        self.masks[index] = transforms.resize_image(self.dimension, self.masks[index])
+        return self.images[index], self.masks[index]
+
+    # else:
+    #     return self.images[index], self.masks[index]
 
     def __len__(self):
         return self.data_size

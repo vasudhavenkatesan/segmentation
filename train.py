@@ -9,7 +9,6 @@ import logging
 import sys
 
 from unet.unet import UNET
-from unet.unet_modules import *
 from dataset import hdf5
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
@@ -23,9 +22,10 @@ def training_fn(net,
                 batch_size: int = 1,
                 learning_rate: float = 1e-5,
                 valiation_percent=0.1,
+                input_dim: int = [60, 506, 506],
                 save_checkpoint: bool = True):
     # create dataset
-    dataset = hdf5.Hdf5Dataset(data_file_path)
+    dataset = hdf5.Hdf5Dataset(data_file_path, input_dim)
 
     # create train and validation dataset
     n_dataset = dataset.data_size
@@ -62,7 +62,7 @@ def get_param_arguments():
                         help='Learning rate for optimizer')
     parser.add_argument('--validation_perc', '-val', metavar='VALPERC', type=float, default=0.1,
                         help='Percent of validation set')
-    parser.add_argument('--n_channels', '-n_chan', metavar='NCHANNEL', type=int, default=1,
+    parser.add_argument('--n_channels', '-n_chan', metavar='NCHANNEL', type=int, default=95,
                         help='Number of channels in the image')
     parser.add_argument('--n_classes', '-n_class', metavar='NCLASS', type=int, default=3,
                         help='Number of output classes')
@@ -76,12 +76,12 @@ if __name__ == '__main__':
     else:
         device = 'cpu'
     logging.info(f'Using device - {device}')
-    x = torch.randn((1, 1, 95, 512, 512))
+    x = torch.randn((1, 95, 512, 512))
     model = UNET(parameter_arguments.n_channels, parameter_arguments.n_classes)
     preds = model(x)
     logging.info(f'UNET model initialised - {preds.shape}')
 
-    # training_fn(net=model, device=device, batch_size=parameter_arguments.batch_size,
-    #             learning_rate=parameter_arguments.learning_rate, valiation_percent=parameter_arguments.validation_perc)
+    training_fn(net=model, device=device, batch_size=parameter_arguments.batch_size,
+                learning_rate=parameter_arguments.learning_rate, valiation_percent=parameter_arguments.validation_perc)
 
     model.to(device)
