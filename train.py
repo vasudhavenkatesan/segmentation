@@ -41,16 +41,34 @@ def training_fn(net,
     loss_fn = nn.CrossEntropyLoss()
     optimizer = torch.optim.SGD(net.parameters(), lr=learning_rate, momentum=0.9)
 
+    # training step
     for epoch in range(1, epochs + 1):
         net.train()
         loss = 0
         with tqdm(total=n_train, desc=f'Epoch {epoch}/{epochs}', unit='img') as pbar:
 
-            for i in range(0, n_train):
+            for batch in enumerate(train_dataloader):
                 train_features, train_labels = next(iter(train_dataloader))
                 image = train_features[0]
                 true_mask = train_labels[0]
-                logging.info(f'Image shape in train {image.shape}')
+
+                logging.info(f'Image size {image.shape}')
+
+                image = image.to(device=device, dtype=torch.float64)
+                true_masks = true_masks.to(device=device, dtype=torch.float32)
+
+                pred = model(image)
+                loss = loss_fn(pred, true_mask)
+
+                # Backpropagation
+                optimizer.zero_grad(set_to_none=True)
+                loss.backward()
+                optimizer.step()
+
+                loss, current = loss.item(), (batch * n_train)
+                logging.info(f"loss: {loss:>7f}  [{current:>5d}/{n_train:>5d}]")
+
+    # validation
 
 
 def get_param_arguments():
@@ -76,10 +94,8 @@ if __name__ == '__main__':
     else:
         device = 'cpu'
     logging.info(f'Using device - {device}')
-    x = torch.randn((1, 95, 512, 512))
     model = UNET(parameter_arguments.n_channels, parameter_arguments.n_classes)
-    preds = model(x)
-    logging.info(f'UNET model initialised - {preds.shape}')
+    logging.info(f'UNET model initialised')
 
     training_fn(net=model, device=device, batch_size=parameter_arguments.batch_size,
                 learning_rate=parameter_arguments.learning_rate, valiation_percent=parameter_arguments.validation_perc)

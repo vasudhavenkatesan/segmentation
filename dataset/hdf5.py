@@ -28,6 +28,8 @@ class Hdf5Dataset(Dataset):
         self.data_size = self.images.__len__()
         self.transform = transform
         self.dimension = image_dim
+        self.images = self.transform_fn(self.images)
+        self.masks = self.transform_fn(self.masks)
 
     def __getitem__(self, index):
         # if self.transform:
@@ -40,6 +42,11 @@ class Hdf5Dataset(Dataset):
 
     def __len__(self):
         return self.data_size
+
+    def transform_fn(self, data):
+        for i in range(0, len(data)):
+            data[i] = transforms.resize_image(self.dimension, data[i])
+        return data
 
     @staticmethod
     def create_dataset(self, dirpath):
