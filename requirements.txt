@@ -1,6 +1,10 @@
+--find-links https://download.pytorch.org/whl/torch_stable.html
 matplotlib>=3.3
 numpy>=1.19
 pytest>=6.1
 pycodestyle>=2.6
 scipy>=1.5
 scikit-learn>=0.23
+h5py>=3.6.0
+tqdm>=4.64.0
+torch==1.11+cpu
