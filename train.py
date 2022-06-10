@@ -27,7 +27,7 @@ def training_fn(net,
     # create dataset
     dataset = hdf5.Hdf5Dataset(data_file_path, input_dim)
 
-    # create train and validation dataset
+    # create training and validation dataset
     n_dataset = dataset.data_size
     n_val = int(n_dataset * valiation_percent)
     n_train = n_dataset - n_val
@@ -41,12 +41,11 @@ def training_fn(net,
     loss_fn = nn.CrossEntropyLoss()
     optimizer = torch.optim.SGD(net.parameters(), lr=learning_rate, momentum=0.9)
 
-    # training step
     for epoch in range(1, epochs + 1):
         net.train()
         loss = 0
         with tqdm(total=n_train, desc=f'Epoch {epoch}/{epochs}', unit='img') as pbar:
-
+            # training
             for batch in enumerate(train_dataloader):
                 train_features, train_labels = next(iter(train_dataloader))
                 image = train_features[0]
@@ -55,7 +54,7 @@ def training_fn(net,
                 logging.info(f'Image size {image.shape}')
 
                 image = image.to(device=device, dtype=torch.float64)
-                true_masks = true_masks.to(device=device, dtype=torch.float32)
+                true_mask = true_mask.to(device=device, dtype=torch.float32)
 
                 pred = model(image)
                 loss = loss_fn(pred, true_mask)
@@ -68,7 +67,22 @@ def training_fn(net,
                 loss, current = loss.item(), (batch * n_train)
                 logging.info(f"loss: {loss:>7f}  [{current:>5d}/{n_train:>5d}]")
 
-    # validation
+        # validation
+        num_batches = len(val_dataloader)
+        test_loss, correct = 0, 0
+
+        with torch.no_grad():
+            for batch in enumerate(train_dataloader):
+                val_image, val_label = next(iter(train_dataloader))
+                image = val_image[0]
+                true_mask = val_label[0]
+                pred = model(image)
+                test_loss += loss_fn(pred, true_mask).item()
+                correct += (pred.argmax(1) == true_mask).type(torch.float).sum().item()
+
+        test_loss /= num_batches
+        correct /= n_val
+        print(f"Test Error: \n Accuracy: {(100 * correct):>0.1f}%, Avg loss: {test_loss:>8f} \n")
 
 
 def get_param_arguments():
@@ -80,7 +94,7 @@ def get_param_arguments():
                         help='Learning rate for optimizer')
     parser.add_argument('--validation_perc', '-val', metavar='VALPERC', type=float, default=0.1,
                         help='Percent of validation set')
-    parser.add_argument('--n_channels', '-n_chan', metavar='NCHANNEL', type=int, default=95,
+    parser.add_argument('--n_channels', '-n_chan', metavar='NCHANNEL', type=int, default=60,
                         help='Number of channels in the image')
     parser.add_argument('--n_classes', '-n_class', metavar='NCLASS', type=int, default=3,
                         help='Number of output classes')
@@ -100,4 +114,4 @@ if __name__ == '__main__':
     training_fn(net=model, device=device, batch_size=parameter_arguments.batch_size,
                 learning_rate=parameter_arguments.learning_rate, valiation_percent=parameter_arguments.validation_perc)
 
-    model.to(device)
+    logging.info('Training completed')
