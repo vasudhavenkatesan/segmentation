@@ -12,9 +12,10 @@ import sys
 from unet.unet import UNET
 from dataset import hdf5
 
-logging.basicConfig(filename=datetime.now().strftime('logs/training_log_%H_%M_%d_%m_%Y.log'), encoding='utf-8',
-                    level=logging.DEBUG, format='%(asctime)s %(message)s',
-                    datefmt='%m/%d/%Y %I:%M:%S %p')
+logging.basicConfig(
+    logging.FileHandler(filename=datetime.now().strftime('logs/training_log_%H_%M_%d_%m_%Y.log'), encoding='utf-8',
+                        level=logging.DEBUG), format='%(asctime)s %(message)s',
+    datefmt='%m/%d/%Y %I:%M:%S %p')
 
 data_file_path = 'dataset/data/2_2_2_downsampled'
 
