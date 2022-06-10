@@ -6,12 +6,15 @@ from torch.utils.data import DataLoader, random_split
 from tqdm import tqdm
 
 import logging
+from datetime import datetime
 import sys
 
 from unet.unet import UNET
 from dataset import hdf5
 
-logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+logging.basicConfig(filename=datetime.now().strftime('logs/training_log_%H_%M_%d_%m_%Y.log'), encoding='utf-8',
+                    level=logging.DEBUG, format='%(asctime)s %(message)s',
+                    datefmt='%m/%d/%Y %I:%M:%S %p')
 
 data_file_path = 'dataset/data/2_2_2_downsampled'
 
@@ -53,36 +56,36 @@ def training_fn(net,
 
                 logging.info(f'Image size {image.shape}')
 
-                image = image.to(device=device, dtype=torch.float64)
-                true_mask = true_mask.to(device=device, dtype=torch.float32)
-
-                pred = model(image)
-                loss = loss_fn(pred, true_mask)
-
-                # Backpropagation
-                optimizer.zero_grad(set_to_none=True)
-                loss.backward()
-                optimizer.step()
-
-                loss, current = loss.item(), (batch * n_train)
-                logging.info(f"loss: {loss:>7f}  [{current:>5d}/{n_train:>5d}]")
+                # image = image.to(device=device, dtype=torch.float64)
+                # true_mask = true_mask.to(device=device, dtype=torch.float32)
+                #
+                # pred = model(image)
+                # loss = loss_fn(pred, true_mask)
+                #
+                # # Backpropagation
+                # optimizer.zero_grad(set_to_none=True)
+                # loss.backward()
+                # optimizer.step()
+                #
+                # loss, current = loss.item(), (batch * n_train)
+                # logging.info(f"loss: {loss:>7f}  [{current:>5d}/{n_train:>5d}]")
 
         # validation
         num_batches = len(val_dataloader)
         test_loss, correct = 0, 0
 
-        with torch.no_grad():
-            for batch in enumerate(train_dataloader):
-                val_image, val_label = next(iter(train_dataloader))
-                image = val_image[0]
-                true_mask = val_label[0]
-                pred = model(image)
-                test_loss += loss_fn(pred, true_mask).item()
-                correct += (pred.argmax(1) == true_mask).type(torch.float).sum().item()
+        # with torch.no_grad():
+        #     for batch in enumerate(train_dataloader):
+        #         val_image, val_label = next(iter(train_dataloader))
+        #         image = val_image[0]
+        #         true_mask = val_label[0]
+        #         pred = model(image)
+        #         test_loss += loss_fn(pred, true_mask).item()
+        #         correct += (pred.argmax(1) == true_mask).type(torch.float).sum().item()
 
         test_loss /= num_batches
         correct /= n_val
-        print(f"Test Error: \n Accuracy: {(100 * correct):>0.1f}%, Avg loss: {test_loss:>8f} \n")
+        logging.info(f"Test Error: \n Accuracy: {(100 * correct):>0.1f}%, Avg loss: {test_loss:>8f} \n")
 
 
 def get_param_arguments():
