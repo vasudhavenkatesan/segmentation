@@ -56,7 +56,7 @@ class Hdf5Dataset(Dataset):
             with h5py.File(file, "r") as image_file:
                 group = image_file['ITKImage']
                 subgroup = group['0']
-                self.images.append(torch.from_numpy(np.array(subgroup['VoxelData'])))
+                self.images.append(torch.from_numpy(np.array(subgroup['VoxelData']).astype(numpy.float32)))
             with h5py.File(mask, "r") as mask_file:
                 group = mask_file['ITKImage']
                 subgroup = group['0']
