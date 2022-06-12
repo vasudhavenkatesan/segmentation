@@ -58,12 +58,11 @@ def training_fn(net,
         with tqdm(total=n_train, desc=f'Epoch {epoch}/{epochs}', unit='img') as pbar:
             logger.info(f'Epoch {epoch}/{epochs}')
             # training
-            for batch in enumerate(train_dataloader):
-                train_features, train_labels = next(iter(train_dataloader))
-                image = train_features[0]
-                true_mask = train_labels[0]
+            for batch in train_dataloader:
+                image = batch[0]
+                true_mask = batch[1]
 
-                image = image.to(device=device, dtype=torch.float64)
+                image = image.to(device=device, dtype=torch.float32)
                 true_mask = true_mask.to(device=device, dtype=torch.float32)
 
                 pred = model(image)
