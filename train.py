@@ -81,10 +81,9 @@ def training_fn(net,
         test_loss, correct = 0, 0
 
         with torch.no_grad():
-            for batch in enumerate(train_dataloader):
-                val_image, val_label = next(iter(train_dataloader))
-                image = val_image[0]
-                true_mask = val_label[0]
+            for batch in train_dataloader:
+                image = batch[0]
+                true_mask = batch[1]
                 pred = model(image)
                 test_loss += loss_fn(pred, true_mask).item()
                 correct += (pred.argmax(1) == true_mask).type(torch.float).sum().item()

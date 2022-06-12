@@ -35,11 +35,10 @@ class UNET(nn.Module):
 
 
 def test():
-    x = torch.randn((1, 95, 512, 512))
-    model = UNET(n_channels=95, n_classes=3)
+    x = torch.randn((1, 60, 506, 506))
+    model = UNET(n_channels=60, n_classes=3)
     preds = model(x)
-    print(preds.shape)
-    print(x.shape)
+    print(f'Final - {preds.shape}')
 
 
 if __name__ == '__main__':
