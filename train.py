@@ -9,6 +9,8 @@ import logging
 from datetime import datetime
 import sys
 
+from pathlib import Path
+
 from unet.unet import UNET
 from dataset import hdf5
 
@@ -25,6 +27,7 @@ logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 
 data_file_path = 'dataset/data/2_2_2_downsampled'
+checkpoint_path = 'checkpoints/'
 
 
 def training_fn(net,
@@ -62,7 +65,7 @@ def training_fn(net,
                 image = batch[0]
                 true_mask = batch[1]
                 image = image.to(device=device, dtype=torch.float32)
-                true_mask = true_mask.to(device=device, dtype=torch.float32)
+                true_mask = true_mask.to(device=device, dtype=torch.int64)
 
                 pred = model(image)
                 loss = loss_fn(pred, true_mask)
@@ -73,7 +76,8 @@ def training_fn(net,
                 optimizer.step()
 
                 loss, current = loss.item(), (batch * n_train)
-                logger.info(f"loss: {loss:>7f}  [{current:>5d}/{n_train:>5d}]")
+                print(f'loss: {loss}  [{current}/{n_train}]')
+                logger.info(f'loss: {loss}  [{current}/{n_train}]')
 
         # validation
         logger.info('Validation step')
@@ -83,14 +87,21 @@ def training_fn(net,
         with torch.no_grad():
             for batch in train_dataloader:
                 image = batch[0]
-                true_mask = batch[1]
+                true_mask = batch[1].torch.int64
                 pred = model(image)
                 test_loss += loss_fn(pred, true_mask).item()
                 correct += (pred.argmax(1) == true_mask).type(torch.float).sum().item()
 
         test_loss /= num_batches
         correct /= n_val
-        logger.info(f"Test Error: \n Accuracy: {(100 * correct):>0.1f}%, Avg loss: {test_loss:>8f} \n")
+        print(f"Test Error: \n Accuracy: {(100 * correct)}%, Avg loss: {test_loss} \n")
+        logger.info(f"Test Error: \n Accuracy: {(100 * correct)}%, Avg loss: {test_loss} \n")
+
+    # save checkpoint
+    if save_checkpoint:
+        Path(checkpoint_path).mkdir(parents=True, exist_ok=True)
+        torch.save(net.state_dict(), str(checkpoint_path / 'checkpoint_epoch{}.pth'.format(epoch)))
+        logging.info(f'Checkpoint {epoch} saved!')
 
 
 def get_param_arguments():
