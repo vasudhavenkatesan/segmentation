@@ -61,7 +61,6 @@ def training_fn(net,
             for batch in train_dataloader:
                 image = batch[0]
                 true_mask = batch[1]
-
                 image = image.to(device=device, dtype=torch.float32)
                 true_mask = true_mask.to(device=device, dtype=torch.float32)
 

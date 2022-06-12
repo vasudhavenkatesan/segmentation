@@ -19,5 +19,7 @@ def calc_size_for_padding(reqd_dim, data_dim):
     return l_size, r_size
 
 
-def resize_image(reqd_dim, input):
+def resize_image(reqd_dim, input, is_mask: bool):
+    if is_mask:
+        return input[0:reqd_dim[1], 0:reqd_dim[2]]
     return input[0:reqd_dim[0], 0:reqd_dim[1], 0:reqd_dim[2]]

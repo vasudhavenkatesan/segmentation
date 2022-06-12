@@ -29,23 +29,17 @@ class Hdf5Dataset(Dataset):
         self.transform = transform
         self.dimension = image_dim
         self.images = self.transform_fn(self.images)
-        self.masks = self.transform_fn(self.masks)
+        self.masks = self.transform_fn(self.masks, is_mask=True)
 
     def __getitem__(self, index):
-        # if self.transform:
-        self.images[index] = transforms.resize_image(self.dimension, self.images[index])
-        self.masks[index] = transforms.resize_image(self.dimension, self.masks[index])
         return self.images[index], self.masks[index]
-
-    # else:
-    #     return self.images[index], self.masks[index]
 
     def __len__(self):
         return self.data_size
 
-    def transform_fn(self, data):
+    def transform_fn(self, data, is_mask: bool = False):
         for i in range(0, len(data)):
-            data[i] = transforms.resize_image(self.dimension, data[i])
+            data[i] = transforms.resize_image(self.dimension, data[i], is_mask)
         return data
 
     @staticmethod
@@ -60,5 +54,6 @@ class Hdf5Dataset(Dataset):
             with h5py.File(mask, "r") as mask_file:
                 group = mask_file['ITKImage']
                 subgroup = group['0']
-                self.masks.append(torch.from_numpy(np.array(subgroup['VoxelData']).astype(numpy.float32)))
+                mask_with_ch = np.array(subgroup['VoxelData']).astype(numpy.float32)
+                self.masks.append(torch.from_numpy(mask_with_ch[0, :, :]))
         logging.info('Completed initialisation')
