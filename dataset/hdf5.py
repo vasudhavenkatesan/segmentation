@@ -55,5 +55,8 @@ class Hdf5Dataset(Dataset):
                 group = mask_file['ITKImage']
                 subgroup = group['0']
                 mask_with_ch = np.array(subgroup['VoxelData']).astype(numpy.float32)
-                self.masks.append(torch.from_numpy(mask_with_ch[0, :, :]))
+                mask_labels = torch.from_numpy(mask_with_ch[0, :, :])
+                # replace mask label of 255 with 2
+                mask_labels[mask_labels == 255] = 2
+                self.masks.append(mask_labels)
         logging.info('Completed initialisation')
