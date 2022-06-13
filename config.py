@@ -1,16 +1,15 @@
 import torch
 import os
 
+path = 'C:/Users/vasud/Documents/Subjects/Project/segmentation'
 DATASET_PATH = os.path.join("dataset", "data", "train")
 
 TEST_SPLIT = 0.15
 
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+device = "cuda" if torch.cuda.is_available() else "cpu"
 
-PIN_MEMORY = True if DEVICE == "cuda" else False
+PIN_MEMORY = True if device == "cuda" else False
 
-N_CHANNELS = 95
+n_channels = 60
 
-N_CLASSES = 3
-
-N_LEVELS = 3
+n_classes = 3

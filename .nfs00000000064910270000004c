@@ -1,5 +1,4 @@
 import argparse
-import os.path
 
 import torch
 import torch.nn as nn
@@ -14,7 +13,6 @@ from pathlib import Path
 
 from unet.unet import UNET
 from dataset import hdf5
-import config
 
 logging.basicConfig(handlers=[
     logging.FileHandler(filename=datetime.now().strftime('logs/training_log_%H_%M_%d_%m_%Y.log'),
@@ -30,6 +28,7 @@ logger.setLevel(logging.DEBUG)
 
 data_file_path = 'dataset/data/2_2_2_downsampled'
 checkpoint_path = 'checkpoints/checkpoint_epoch1.pth'
+
 
 def training_fn(net,
                 device,
@@ -57,14 +56,14 @@ def training_fn(net,
     optimizer = torch.optim.SGD(net.parameters(), lr=learning_rate, momentum=0.9)
 
     for epoch in range(1, epochs + 1):
+    
+        #checkpoint = torch.load(checkpoint_path)
+        #net.load_state_dict(checkpoint)
+        #optimizer.load_state_dict(checkpoint)
 
-        # checkpoint = torch.load(checkpoint_path)
-        # net.load_state_dict(checkpoint)
-        # optimizer.load_state_dict(checkpoint)
-
-        # epoch = checkpoint['epoch']
-        # running_loss = checkpoint['loss']
-
+        #epoch = checkpoint['epoch']
+        #running_loss = checkpoint['loss']
+        
         net.train()
         running_loss = 0
         with tqdm(total=n_train, desc=f'Epoch {epoch}/{epochs}', unit='img') as pbar:
@@ -106,8 +105,8 @@ def training_fn(net,
 
         test_loss /= num_batches
         correct /= n_val
-        print(f"Test Error: \n Accuracy: {(correct)}%, Avg loss: {test_loss} \n")
-        logger.info(f"Test Error: \n Accuracy: {(correct)}%, Avg loss: {test_loss} \n")
+        print(f"Test Error: \n Accuracy: {(100 * correct)}%, Avg loss: {test_loss} \n")
+        logger.info(f"Test Error: \n Accuracy: {(100 * correct)}%, Avg loss: {test_loss} \n")
 
 
     # save checkpoint
@@ -115,7 +114,6 @@ def training_fn(net,
        # Path(checkpoint_path).mkdir(parents=True, exist_ok=True)
         #torch.save(net.state_dict(), str(checkpoint_path + '/' + 'checkpoint_epoch{}.pth'.format(epoch)))
        # logging.info(f'Checkpoint {epoch} saved!')
-
 
 
 def get_param_arguments():
