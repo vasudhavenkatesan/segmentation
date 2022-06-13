@@ -1,4 +1,5 @@
 import argparse
+import os.path
 
 import torch
 import torch.nn as nn
@@ -13,6 +14,7 @@ from pathlib import Path
 
 from unet.unet import UNET
 from dataset import hdf5
+import config
 
 logging.basicConfig(handlers=[
     logging.FileHandler(filename=datetime.now().strftime('logs/training_log_%H_%M_%d_%m_%Y.log'),
@@ -27,7 +29,7 @@ logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 
 data_file_path = 'dataset/data/2_2_2_downsampled'
-checkpoint_path = 'checkpoints/'
+checkpoint_path = 'checkpoints'
 
 
 def training_fn(net,
@@ -43,7 +45,7 @@ def training_fn(net,
 
     # create training and validation dataset
     n_dataset = dataset.data_size
-    n_val = int(n_dataset * valiation_percent)
+    n_val = round(n_dataset * valiation_percent)
     n_train = n_dataset - n_val
     train_set, val_set = random_split(dataset, [n_train, n_val])
 
@@ -56,8 +58,16 @@ def training_fn(net,
     optimizer = torch.optim.SGD(net.parameters(), lr=learning_rate, momentum=0.9)
 
     for epoch in range(1, epochs + 1):
+
+        # checkpoint = torch.load(checkpoint_path)
+        # net.load_state_dict(checkpoint)
+        # optimizer.load_state_dict(checkpoint)
+
+        # epoch = checkpoint['epoch']
+        # running_loss = checkpoint['loss']
+
         net.train()
-        loss = 0
+        running_loss = 0
         with tqdm(total=n_train, desc=f'Epoch {epoch}/{epochs}', unit='img') as pbar:
             logger.info(f'Epoch {epoch}/{epochs}')
             # training
@@ -75,9 +85,9 @@ def training_fn(net,
                 loss.backward()
                 optimizer.step()
 
-                loss, current = loss.item(), (batch * n_train)
-                print(f'loss: {loss}  [{current}/{n_train}]')
-                logger.info(f'loss: {loss}  [{current}/{n_train}]')
+                running_loss += loss.item()
+                print(f'Epoch : {epoch},  loss: {running_loss / n_train}')
+                running_loss = 0.0
 
         # validation
         logger.info('Validation step')
@@ -101,10 +111,10 @@ def training_fn(net,
         logger.info(f"Test Error: \n Accuracy: {(100 * correct)}%, Avg loss: {test_loss} \n")
 
     # save checkpoint
-    if save_checkpoint:
-        Path(checkpoint_path).mkdir(parents=True, exist_ok=True)
-        torch.save(net.state_dict(), str(checkpoint_path / 'checkpoint_epoch{}.pth'.format(epoch)))
-        logging.info(f'Checkpoint {epoch} saved!')
+    # if save_checkpoint:
+    # Path(checkpoint_path).mkdir(parents=True, exist_ok=True)
+    # torch.save(net.state_dict(), str(checkpoint_path + '/' + 'checkpoint_epoch{}.pth'.format(epoch)))
+    # logging.info(f'Checkpoint {epoch} saved!')
 
 
 def get_param_arguments():
