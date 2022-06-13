@@ -84,10 +84,11 @@ def training_fn(net,
         num_batches = len(val_dataloader)
         test_loss, correct = 0, 0
 
+        net.eval()
         with torch.no_grad():
             for batch in train_dataloader:
-                image = batch[0]
-                true_mask = batch[1].torch.int64
+                image = image.to(device=device, dtype=torch.float32)
+                true_mask = true_mask.to(device=device, dtype=torch.int64)
                 pred = model(image)
                 test_loss += loss_fn(pred, true_mask).item()
                 correct += (pred.argmax(1) == true_mask).type(torch.float).sum().item()
