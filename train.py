@@ -10,6 +10,7 @@ from pathlib import Path
 
 from unet.unet import UNET
 from dataset import hdf5
+from evaluate import mIoU
 import config
 
 # Logger
@@ -76,7 +77,8 @@ def training_fn(net,
 
             running_loss += loss.item()
             print(f'Epoch : {epoch},  loss: {(running_loss / batch_size):.4f}')
-
+            print(f'MIoU - : {mIoU(pred, true_mask)}')
+            
         # validation
         logger.info('Validation step')
         net.eval()
@@ -94,6 +96,7 @@ def training_fn(net,
                 loss = loss_fn(pred, true_mask)
                 val_loss += loss
         print(f'Validation loss : {val_loss:.4f}')
+        print(f'MIoU - : {mIoU(pred, true_mask)}')
 
     # save checkpoint
     if save_checkpoint:

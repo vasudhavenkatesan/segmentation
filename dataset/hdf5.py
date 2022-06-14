@@ -11,6 +11,7 @@ from augmentation import transforms
 
 def get_file_list_from_dir(filepath):
     p = Path(filepath)
+    print(f'Dir name - {p.name}')
     assert (p.is_dir())
     files = list(p.glob('**/*img.h5'))
     if len(files) < 1:
