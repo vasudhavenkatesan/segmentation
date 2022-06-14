@@ -13,7 +13,7 @@ n_channels = 60
 
 n_classes = 3
 
-checkpoint_dir = os.path.join("checkpoints", "Model.pth")
+checkpoint_dir = os.path.join("checkpoints")
 
 
 def get_logger():
