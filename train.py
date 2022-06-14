@@ -131,7 +131,7 @@ if __name__ == '__main__':
     model = UNET(parameter_arguments.n_channels, parameter_arguments.n_classes)
     logger.info(f'UNET model initialised')
 
-    training_fn(net=model, device=device, batch_size=parameter_arguments.batch_size,
+    training_fn(net=model, device=device, epochs=parameter_arguments.epochs, batch_size=parameter_arguments.batch_size,
                 learning_rate=parameter_arguments.learning_rate, valiation_percent=parameter_arguments.validation_perc,
                 input_dim=config.input_dimension)
 
