@@ -51,7 +51,7 @@ def training_fn(net,
     for epoch in range(1, epochs + 1):
         print('Epoch {}/{}'.format(epoch, epochs))
         print('-' * 10)
-        if os.path.exists(checkpoint_path, "Model.pth"):  # checking if there is a file with this name
+        if os.path.exists(checkpoint_path):  # checking if there is a file with this name
             checkpoint = torch.load(checkpoint_path)
             net.load_state_dict(checkpoint)
         scheduler.step()
@@ -98,11 +98,11 @@ def training_fn(net,
 
     # save checkpoint
     if save_checkpoint:
-        if os.path.exists(checkpoint_path, "Model.pth"):  # checking if there is a file with this name
-            os.remove(checkpoint_path, "Model.pth")  # deleting the file
+        if os.path.exists(checkpoint_path):  # checking if there is a file with this name
+            os.remove(checkpoint_path)  # deleting the file
         Path(checkpoint_path).mkdir(parents=True, exist_ok=True)
         checkpoint = net.state_dict()
-        torch.save(checkpoint, str(checkpoint_path + '/' + 'Model.pth'))
+        torch.save(checkpoint, checkpoint_path)
         logger.info(f'Checkpoint {epoch} saved!')
 
 
