@@ -3,8 +3,7 @@ import os
 import logging
 from datetime import datetime
 
-path = 'C:/Users/vasud/Documents/Subjects/Project/segmentation'
-DATASET_PATH = os.path.join("dataset", "data", "")
+dataset_path = os.path.join("dataset", "data", "2_2_2_downsampled")
 
 TEST_SPLIT = 0.15
 
