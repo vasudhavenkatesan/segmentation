@@ -8,6 +8,8 @@ logs
 
 # Ignore the build directory
 /dist
+*.pth
+/checkpoints
 
 # Ignore IDE specific files
 .idea/

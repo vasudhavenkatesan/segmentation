@@ -20,10 +20,11 @@ def get_file_list_from_dir(filepath):
 
 
 class Hdf5Dataset(Dataset):
-    def __init__(self, filepath, image_dim, transform=None):
+    def __init__(self, filepath, image_dim, transform=None, contains_mask: bool = True):
         logging.info('Initialising dataset from HDF5 files')
         self.images = []
         self.masks = []
+        self.contains_mask = contains_mask
         self.create_dataset(self, filepath)
         self.data_size = self.images.__len__()
         self.transform = transform
@@ -51,12 +52,14 @@ class Hdf5Dataset(Dataset):
                 group = image_file['ITKImage']
                 subgroup = group['0']
                 self.images.append(torch.from_numpy(np.array(subgroup['VoxelData'])))
-            with h5py.File(mask, "r") as mask_file:
-                group = mask_file['ITKImage']
-                subgroup = group['0']
-                mask_with_ch = np.array(subgroup['VoxelData']).astype(numpy.float32)
-                mask_labels = torch.from_numpy(mask_with_ch[0, :, :])
-                # replace mask label of 255 with 2
-                mask_labels[mask_labels == 255] = 2
-                self.masks.append(mask_labels)
+            if self.contains_mask:
+                with h5py.File(mask, "r") as mask_file:
+                    group = mask_file['ITKImage']
+                    subgroup = group['0']
+                    mask_with_ch = np.array(subgroup['VoxelData']).astype(numpy.float32)
+                    mask_labels = torch.from_numpy(mask_with_ch[0, :, :])
+                    # replace mask label of 255 with 2
+                    mask_labels[mask_labels == 255] = 2
+                    self.masks.append(mask_labels)
+
         logging.info('Completed initialisation')
