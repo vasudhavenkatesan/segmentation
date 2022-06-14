@@ -44,9 +44,11 @@ if __name__ == '__main__':
 
     logger.info('Model loaded')
 
-    input_image = parameter_arguments.image_path;
-    predict(net, input_image, config.input_dimension, device)
+    input_image = parameter_arguments.input_path
+    output = predict(net, input_image, config.input_dimension, device)
 
-    net = UNET(config.n_channels, config.n_classes)
-    input_image = parameter_arguments.image_path;
-    predict(net, input_image, )
+    print(f'Prediction over {output.shape}')
+
+    # net = UNET(config.n_channels, config.n_classes)
+    # input_image = parameter_arguments.image_path;
+    # predict(net, input_image)

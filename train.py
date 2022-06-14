@@ -5,7 +5,6 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, random_split
 from torch.optim import lr_scheduler
-import copy
 
 from pathlib import Path
 
