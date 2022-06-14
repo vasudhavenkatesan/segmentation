@@ -9,8 +9,6 @@ from unet.unet import UNET
 from dataset import hdf5
 
 logger = config.get_logger()
-import config
-from unet.unet import UNET
 
 
 def predict(net, image, input_dim, device):

@@ -4,9 +4,8 @@ import os.path
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, random_split
-from tqdm import tqdm
-
-import sys
+from torch.optim import lr_scheduler
+import copy
 
 from pathlib import Path
 
@@ -47,70 +46,60 @@ def training_fn(net,
     # specify loss functions, optimizers
     loss_fn = nn.CrossEntropyLoss()
     optimizer = torch.optim.SGD(net.parameters(), lr=learning_rate, momentum=0.9)
+    scheduler = lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
+    global_step = 0
 
     for epoch in range(1, epochs + 1):
-
+        print('Epoch {}/{}'.format(epoch, epochs))
+        print('-' * 10)
         checkpoint = torch.load(checkpoint_path)
         net.load_state_dict(checkpoint)
-        # optimizer.load_state_dict(checkpoint['optimizer'])
-
-        # checkpoint = torch.load(checkpoint_path)
-        # net.load_state_dict(checkpoint)
-        # optimizer.load_state_dict(checkpoint)
-
-        # epoch = checkpoint['epoch']
-        # running_loss = checkpoint['loss']
+        scheduler.step()
+        for param_group in optimizer.param_groups:
+            print("LR", param_group['lr'])
 
         net.train()
         running_loss = 0
-        with tqdm(total=n_train, desc=f'Epoch {epoch}/{epochs}', unit='img') as pbar:
-            logger.info(f'Epoch {epoch}/{epochs}')
-            # training
-            for batch in train_dataloader:
-                image = batch[0]
-                true_mask = batch[1]
-                image = image.to(device=device, dtype=torch.float32)
-                true_mask = true_mask.to(device=device, dtype=torch.int64)
+        # training
+        for batch in train_dataloader:
+            image = batch[0]
+            true_mask = batch[1]
+            image = image.to(device=device, dtype=torch.float32)
+            true_mask = true_mask.to(device=device, dtype=torch.int64)
 
-                pred = model(image)
-                loss = loss_fn(pred, true_mask)
+            pred = model(image)
+            loss = loss_fn(pred, true_mask)
 
-                # Backpropagation
-                optimizer.zero_grad(set_to_none=True)
-                loss.backward()
-                optimizer.step()
+            # Backpropagation
+            optimizer.zero_grad(set_to_none=True)
+            loss.backward()
+            optimizer.step()
 
-                running_loss += loss.item()
-                print(f'Epoch : {epoch},  loss: {running_loss / n_train}')
-                running_loss = 0.0
+            running_loss += loss.item()
+            print(f'Epoch : {epoch},  loss: {(running_loss / batch_size):.4f}')
 
         # validation
         logger.info('Validation step')
-        num_batches = len(val_dataloader)
-        test_loss, correct = 0, 0
-
         net.eval()
-        with torch.no_grad():
-            for batch in val_dataloader:
-                image = batch[0]
-                true_mask = batch[1]
-                image = image.to(device=device, dtype=torch.float32)
-                true_mask = true_mask.to(device=device, dtype=torch.int64)
-                pred = model(image)
-                test_loss += loss_fn(pred, true_mask).item()
-                correct += (pred.argmax(1) == true_mask).type(torch.float).sum().item()
 
-        test_loss /= num_batches
-        correct /= n_val
-        print(f"Test Error: \n Accuracy: {(100 * correct)}%, Avg loss: {test_loss} \n")
-        logger.info(f"Test Error: \n Accuracy: {(100 * correct)}%, Avg loss: {test_loss} \n")
+        for batch in val_dataloader:
+            image = batch[0]
+            mask = batch[1]
+            image = image.to(device=device, dtype=torch.float32)
+            true_mask = mask.to(device=device, dtype=torch.int64)
+
+            val_loss = 0
+            with torch.no_grad():
+                # predict the mask
+                pred = net(image)
+                loss = loss_fn(pred, true_mask)
+                val_loss += loss
+        print(f'Validation loss : {val_loss:.4f}')
 
     # save checkpoint
-
     if save_checkpoint:
         Path(checkpoint_path).mkdir(parents=True, exist_ok=True)
-        checkpoint = {'state_dict': net.state_dict(), 'optimizer': optimizer.state_dict(), 'epoch': epoch,
-                      'loss': running_loss}
+        checkpoint = net.state_dict()
         torch.save(checkpoint, str(checkpoint_path + '/' + 'Model.pth'))
         logger.info(f'Checkpoint {epoch} saved!')
 
