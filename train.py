@@ -100,7 +100,6 @@ def training_fn(net,
     if save_checkpoint:
         if os.path.exists(checkpoint_path):  # checking if there is a file with this name
             os.remove(checkpoint_path)  # deleting the file
-        Path(checkpoint_path).mkdir(parents=True, exist_ok=True)
         checkpoint = net.state_dict()
         torch.save(checkpoint, checkpoint_path)
         logger.info(f'Checkpoint {epoch} saved!')
