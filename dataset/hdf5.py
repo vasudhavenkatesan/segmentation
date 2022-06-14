@@ -21,12 +21,13 @@ def get_file_list_from_dir(filepath):
 
 
 class Hdf5Dataset(Dataset):
-    def __init__(self, filepath, image_dim, transform=None, contains_mask: bool = True):
+    def __init__(self, filepath, image_dim, transform=None, contains_mask: bool = True,
+                 mask_with_channel: bool = False):
         logging.info('Initialising dataset from HDF5 files')
         self.images = []
         self.masks = []
         self.contains_mask = contains_mask
-        self.create_dataset(self, filepath)
+        self.create_dataset(self, filepath, mask_with_channel)
         self.data_size = self.images.__len__()
         self.transform = transform
         self.dimension = image_dim
@@ -45,7 +46,7 @@ class Hdf5Dataset(Dataset):
         return data
 
     @staticmethod
-    def create_dataset(self, dirpath):
+    def create_dataset(self, dirpath, mask_with_channel: bool = False):
         paths = get_file_list_from_dir(dirpath)
         for file in paths:
             mask = dirpath + '/' + file.name.rpartition('img')[0] + 'mask.h5'
@@ -58,9 +59,15 @@ class Hdf5Dataset(Dataset):
                     group = mask_file['ITKImage']
                     subgroup = group['0']
                     mask_with_ch = np.array(subgroup['VoxelData']).astype(numpy.float32)
-                    mask_labels = torch.from_numpy(mask_with_ch[0, :, :])
-                    # replace mask label of 255 with 2
-                    mask_labels[mask_labels == 255] = 2
-                    self.masks.append(mask_labels)
+                    if mask_with_channel:
+                        mask_labels = torch.from_numpy(mask_with_ch)
+                        # replace mask label of 255 with 2
+                        mask_labels[mask_labels == 255] = 2
+                        self.masks.append(mask_labels)
+                    else:
+                        mask_labels = torch.from_numpy(mask_with_ch[0, :, :])
+                        # replace mask label of 255 with 2
+                        mask_labels[mask_labels == 255] = 2
+                        self.masks.append(mask_labels)
 
         logging.info('Completed initialisation')

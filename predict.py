@@ -8,6 +8,7 @@ import torch.nn.functional as F
 import config
 from unet.unet import UNET
 from dataset import hdf5
+from evaluate import mIoU
 
 logger = config.get_logger()
 
@@ -15,7 +16,7 @@ logger = config.get_logger()
 def predict(net, image, input_dim, device):
     net.eval()
 
-    img = hdf5.Hdf5Dataset(image, input_dim, contains_mask=False)
+    img = hdf5.Hdf5Dataset(image, input_dim, mask_with_channel=True)
     n_preds = img.images.__len__()
     pred_masks = []
     for i in range(0, n_preds):
@@ -24,6 +25,8 @@ def predict(net, image, input_dim, device):
             prediction = net(image)
             probabilties = F.softmax(prediction)
             mask = probabilties.cpu().squeeze()
+
+        print(f'Mean IoU -  {img.masks[i].shape}')
         pred_masks.append(mask.numpy())
     return pred_masks
 

@@ -46,7 +46,6 @@ def training_fn(net,
     loss_fn = nn.CrossEntropyLoss()
     optimizer = torch.optim.SGD(net.parameters(), lr=learning_rate, momentum=0.9)
     scheduler = lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
-    global_step = 0
 
     for epoch in range(1, epochs + 1):
         print('Epoch {}/{}'.format(epoch, epochs))
@@ -78,7 +77,7 @@ def training_fn(net,
             running_loss += loss.item()
             print(f'Epoch : {epoch},  loss: {(running_loss / batch_size):.4f}')
             print(f'MIoU - : {mIoU(pred, true_mask)}')
-            
+
         # validation
         logger.info('Validation step')
         net.eval()
