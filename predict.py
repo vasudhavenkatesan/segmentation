@@ -32,15 +32,8 @@ def get_param_arguments():
     parser.add_argument('--input_path', '-i_path', metavar='IPATH', nargs='+',
                         help='Path of the image to be predicted', required=True)
     parser.add_argument('--viz', '-v', action='store_true', help='Help tp visualise the images')
-    parser.add_argument('--model', '-m', default='MODEL.pth', metavar='FILE',
+    parser.add_argument('--model', '-m', default='Model.pth', metavar='FILE',
                         help='File in which the model is stored')
-
-
-def get_param_arguments():
-    parser = argparse.ArgumentParser(description='Unet parammeters')
-    parser.add_argument('--image_path', '-i_path', metavar='IPATH', type=string,
-                        help='Path of the image to be predicted')
-
     return parser.parse_args()
 
 

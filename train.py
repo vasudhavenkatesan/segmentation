@@ -17,6 +17,7 @@ import config
 # Logger
 logger = config.get_logger()
 
+data_file_path = config.dataset_path
 
 data_file_path = 'dataset/data/2_2_2_downsampled'
 checkpoint_path = 'checkpoints'
@@ -49,8 +50,8 @@ def training_fn(net,
 
     for epoch in range(1, epochs + 1):
 
-        # checkpoint = torch.load(checkpoint_path)
-        # net.load_state_dict(checkpoint)
+        checkpoint = torch.load(checkpoint_path)
+        net.load_state_dict(checkpoint)
         # optimizer.load_state_dict(checkpoint['optimizer'])
 
         # checkpoint = torch.load(checkpoint_path)
@@ -110,7 +111,7 @@ def training_fn(net,
         Path(checkpoint_path).mkdir(parents=True, exist_ok=True)
         checkpoint = {'state_dict': net.state_dict(), 'optimizer': optimizer.state_dict(), 'epoch': epoch,
                       'loss': running_loss}
-        torch.save(checkpoint, str(checkpoint_path + '/' + 'Model1.pth'))
+        torch.save(checkpoint, str(checkpoint_path + '/' + 'Model.pth'))
         logger.info(f'Checkpoint {epoch} saved!')
 
 

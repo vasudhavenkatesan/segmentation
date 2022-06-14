@@ -6,9 +6,11 @@ dataset/data/
 logs
 *.log
 
+# Ignore models
+*.pth
+
 # Ignore the build directory
 /dist
-*.pth
 /checkpoints
 
 # Ignore IDE specific files

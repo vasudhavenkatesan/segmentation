@@ -16,8 +16,6 @@ n_channels = 60
 
 n_classes = 3
 
-input_dimension = [60,506,506]
-
 
 def get_logger():
     logging.basicConfig(handlers=[
