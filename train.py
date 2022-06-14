@@ -18,8 +18,7 @@ logger = config.get_logger()
 
 data_file_path = config.dataset_path
 
-data_file_path = 'dataset/data/2_2_2_downsampled'
-checkpoint_path = 'checkpoints'
+checkpoint_path = config.checkpoint_dir
 
 
 def training_fn(net,

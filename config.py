@@ -13,6 +13,8 @@ n_channels = 60
 
 n_classes = 3
 
+checkpoint_dir = os.path.join("checkpoints", "Model.pth")
+
 
 def get_logger():
     logging.basicConfig(handlers=[
