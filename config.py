@@ -5,11 +5,9 @@ from datetime import datetime
 
 dataset_path = os.path.join("dataset", "data", "2_2_2_downsampled")
 
-TEST_SPLIT = 0.15
-
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
-PIN_MEMORY = True if device == "cuda" else False
+input_dimension = [60, 506, 506]
 
 n_channels = 60
 
