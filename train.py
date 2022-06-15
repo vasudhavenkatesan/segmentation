@@ -57,6 +57,7 @@ def training_fn(net,
         for param_group in optimizer.param_groups:
             print("LR", param_group['lr'])
 
+        net.to(device)
         net.train()
         running_loss = 0
         # training
