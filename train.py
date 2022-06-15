@@ -5,8 +5,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, random_split
 from torch.optim import lr_scheduler
-
-from pathlib import Path
+from torch.utils.tensorboard import SummaryWriter
 
 from unet.unet import UNET
 from dataset import hdf5
@@ -19,6 +18,8 @@ logger = config.get_logger()
 data_file_path = config.dataset_path
 
 checkpoint_path = config.checkpoint_dir
+
+writer = SummaryWriter()
 
 
 def training_fn(net,
@@ -79,6 +80,7 @@ def training_fn(net,
             running_loss += loss.item()
             print(f'Epoch : {epoch},  loss: {(running_loss / batch_size):.4f}')
             print(f'MIoU - : {mIoU(pred, true_mask)}')
+            writer.add_scalar("Loss/train", running_loss, epoch)
 
         # validation
         logger.info('Validation step')
@@ -100,6 +102,7 @@ def training_fn(net,
         print(f'Validation loss : {val_loss:.4f}')
         print(f'MIoU - : {mIoU(pred, true_mask)}')
 
+    writer.flush()
     # save checkpoint
     if save_checkpoint:
         if os.path.exists(checkpoint_path):  # checking if there is a file with this name
@@ -107,6 +110,7 @@ def training_fn(net,
         checkpoint = net.state_dict()
         torch.save(checkpoint, checkpoint_path)
         logger.info(f'Checkpoint {epoch} saved!')
+    writer.close()
 
 
 def get_param_arguments():

@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
-from .unet_modules import *
+from unet_modules import *
+import config
 
 
 class UNET(nn.Module):
@@ -35,8 +36,9 @@ class UNET(nn.Module):
 
 
 def test():
-    x = torch.randn((10, 1, 506, 506))
+    x = torch.randn((1, 1, 506, 506))
     model = UNET(n_channels=1, n_classes=3)
+    model.to(config.device)
     preds = model(x)
     print(f'Final - {preds.shape}')
 

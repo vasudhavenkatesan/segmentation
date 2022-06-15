@@ -12,6 +12,7 @@ logs
 # Ignore the build directory
 /dist
 /checkpoints
+/runs
 
 # Ignore IDE specific files
 .idea/
