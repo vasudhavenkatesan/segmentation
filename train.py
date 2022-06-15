@@ -53,7 +53,7 @@ def training_fn(net,
         if os.path.exists(checkpoint_path):  # checking if there is a file with this name
             checkpoint = torch.load(checkpoint_path)
             net.load_state_dict(checkpoint)
-        scheduler.step()
+        # scheduler.step()
         for param_group in optimizer.param_groups:
             print("LR", param_group['lr'])
 
@@ -62,11 +62,12 @@ def training_fn(net,
         # training
         for batch in train_dataloader:
             image = batch[0]
+            image = image.permute(1, 0, 2, 3)
             true_mask = batch[1]
             image = image.to(device=device, dtype=torch.float32)
             true_mask = true_mask.to(device=device, dtype=torch.int64)
 
-            pred = model(image)
+            pred = net(image)
             loss = loss_fn(pred, true_mask)
 
             # Backpropagation
@@ -84,6 +85,7 @@ def training_fn(net,
 
         for batch in val_dataloader:
             image = batch[0]
+            image = image.permute(1, 0, 2, 3)
             mask = batch[1]
             image = image.to(device=device, dtype=torch.float32)
             true_mask = mask.to(device=device, dtype=torch.int64)
@@ -115,7 +117,7 @@ def get_param_arguments():
                         help='Learning rate for optimizer')
     parser.add_argument('--validation_perc', '-val', metavar='VALPERC', type=float, default=0.1,
                         help='Percent of validation set')
-    parser.add_argument('--n_channels', '-n_chan', metavar='NCHANNEL', type=int, default=60,
+    parser.add_argument('--n_channels', '-n_chan', metavar='NCHANNEL', type=int, default=1,
                         help='Number of channels in the image')
     parser.add_argument('--n_classes', '-n_class', metavar='NCLASS', type=int, default=3,
                         help='Number of output classes')

@@ -3,7 +3,7 @@ import os
 import logging
 from datetime import datetime
 
-dataset_path = os.path.join("dataset", "data", "2_2_2_downsampled")
+dataset_path = "dataset/data/2_2_2_downsampled"
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
