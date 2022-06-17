@@ -34,7 +34,7 @@ def training_fn(net,
     dataset = hdf5.Hdf5Dataset(data_file_path, input_dim, contains_mask=True)
 
     # create training and validation dataset
-    n_dataset = dataset.data_size
+    n_dataset = dataset.__len__()
     n_val = round(n_dataset * valiation_percent)
     n_train = n_dataset - n_val
     train_set, val_set = random_split(dataset, [n_train, n_val])
@@ -66,6 +66,7 @@ def training_fn(net,
             image = batch[0]
             image = image.permute(1, 0, 2, 3)
             true_mask = batch[1]
+            print(f'Image - {image.shape}, mask - {true_mask.shape}')
             image = image.to(device=device, dtype=torch.float32)
             true_mask = true_mask.to(device=device, dtype=torch.int64)
 

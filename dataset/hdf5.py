@@ -22,44 +22,50 @@ def get_file_list_from_dir(filepath):
 class Hdf5Dataset(Dataset):
     def __init__(self, filepath, image_dim, transform=None, contains_mask: bool = True):
         logging.info('Initialising dataset from HDF5 files')
-        self.images = []
-        self.masks = []
+        self.image_id = {}
         self.contains_mask = contains_mask
-        self.create_dataset(self, filepath)
-        self.data_size = self.images.__len__()
+        # stores the image and label ids only
+        self.get_image_id(self, filepath)
         self.transform = transform
         self.dimension = image_dim
-        self.images = self.transform_fn(self.images)
-        self.masks = self.transform_fn(self.masks, is_mask=True)
+        self.dirpath = filepath
 
     def __getitem__(self, index):
-        return self.images[index], self.masks[index]
+        # lazy loading of data
+        image, label = self.get_image_and_label(self, index)
+        image = self.transform_fn(image)
+        label = self.transform_fn(label, is_mask=True)
+        return image, label
 
     def __len__(self):
-        return self.data_size
+        return self.image_id.__len__()
 
     def transform_fn(self, data, is_mask: bool = False):
-        for i in range(0, len(data)):
-            data[i] = transforms.resize_image(self.dimension, data[i], is_mask)
-        return data
+        return transforms.resize_image(self.dimension, data, is_mask)
 
     @staticmethod
-    def create_dataset(self, dirpath):
+    def get_image_id(self, dirpath):
         paths = get_file_list_from_dir(dirpath)
+        i = 0
         for file in paths:
-            mask = dirpath + '/' + file.name.rpartition('img')[0] + 'mask.h5'
-            with h5py.File(file, "r") as image_file:
-                group = image_file['ITKImage']
-                subgroup = group['0']
-                self.images.append(torch.from_numpy(np.array(subgroup['VoxelData'])))
-            if self.contains_mask:
-                with h5py.File(mask, "r") as mask_file:
-                    group = mask_file['ITKImage']
-                    subgroup = group['0']
-                    mask_with_ch = np.array(subgroup['VoxelData']).astype(numpy.float32)
-                    mask_labels = torch.from_numpy(mask_with_ch)
-                    # replace mask label of 255 with 2
-                    mask_labels[mask_labels == 255] = 2
-                    self.masks.append(mask_labels)
+            self.image_id[i] = file
+            i += 1
+        return self.image_id
 
-        logging.info('Completed initialisation')
+    @staticmethod
+    def get_image_and_label(self, id):
+        file = self.image_id[id]
+        with h5py.File(file, "r") as image_file:
+            group = image_file['ITKImage']
+            subgroup = group['0']
+            image = torch.from_numpy(np.array(subgroup['VoxelData']))
+        if self.contains_mask:
+            mask = self.dirpath + '/' + file.name.rpartition('img')[0] + 'mask.h5'
+            with h5py.File(mask, "r") as mask_file:
+                group = mask_file['ITKImage']
+                subgroup = group['0']
+                label = torch.from_numpy(np.array(subgroup['VoxelData']).astype(numpy.float32))
+                # replace mask label of 255 with 2
+                label[label == 255] = 2
+        logging.info(f'Loaded image {id} - {file}')
+        return image, label
