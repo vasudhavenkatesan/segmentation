@@ -7,7 +7,7 @@ dataset_path = "dataset/data/2_2_2_downsampled"
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
-input_dimension = [60, 506, 506]
+input_dimension = [16, 256, 256]
 
 n_channels = 60
 

@@ -33,6 +33,7 @@ class Hdf5Dataset(Dataset):
     def __getitem__(self, index):
         # lazy loading of data
         image, label = self.get_image_and_label(self, index)
+        print(f'Image - {image.shape}, mask - {label.shape}')
         image = self.transform_fn(image)
         label = self.transform_fn(label, is_mask=True)
         return image, label

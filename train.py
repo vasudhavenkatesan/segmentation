@@ -6,6 +6,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader, random_split
 from torch.optim import lr_scheduler
 from torch.utils.tensorboard import SummaryWriter
+import torch.nn.functional as F
 
 from unet.unet import UNET
 from dataset import hdf5
@@ -24,14 +25,14 @@ writer = SummaryWriter()
 
 def training_fn(net,
                 device,
+                input_dim,
                 epochs: int = 1,
                 batch_size: int = 1,
                 learning_rate: float = 1e-5,
                 valiation_percent=0.1,
-                input_dim: int = [60, 506, 506],
                 save_checkpoint: bool = True):
     # create dataset
-    dataset = hdf5.Hdf5Dataset(data_file_path, input_dim, contains_mask=True)
+    dataset = hdf5.Hdf5Dataset(data_file_path, image_dim=input_dim, contains_mask=True)
 
     # create training and validation dataset
     n_dataset = dataset.__len__()
@@ -66,11 +67,15 @@ def training_fn(net,
             image = batch[0]
             image = image.permute(1, 0, 2, 3)
             true_mask = batch[1]
-            print(f'Image - {image.shape}, mask - {true_mask.shape}')
+            # print(f'Image - {image.shape}, mask - {true_mask.shape}')
             image = image.to(device=device, dtype=torch.float32)
             true_mask = true_mask.to(device=device, dtype=torch.int64)
+            true_mask = F.one_hot(true_mask, config.n_classes)
+            true_mask = true_mask.permute(0, 1, 4, 2, 3)
+            print(f'MASK one hot encoding - {true_mask.shape}')
 
             pred = net(image)
+            pred = pred.permute(1, 0, 2, 3)
             loss = loss_fn(pred, true_mask)
 
             # Backpropagation
