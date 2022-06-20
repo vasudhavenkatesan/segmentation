@@ -28,7 +28,7 @@ def training_fn(net,
                 batch_size: int = 1,
                 learning_rate: float = 1e-5,
                 valiation_percent=0.1,
-                input_dim: int = [56, 506, 506],
+                input_dim: int = [60, 506, 506],
                 save_checkpoint: bool = True):
     # create dataset
     dataset = hdf5.Hdf5Dataset(data_file_path, input_dim, contains_mask=True)
@@ -66,13 +66,11 @@ def training_fn(net,
             image = batch[0]
             image = image.permute(1, 0, 2, 3)
             true_mask = batch[1]
-            pred = []
             print(f'Image - {image.shape}, mask - {true_mask.shape}')
-            for i in range(0, input_dim[0], 4):
-                image_ = image[i: (i + 3), :, :, :].to(device=device, dtype=torch.float32)
-                mask = net(image_)
-                pred = pred.append(mask)
+            image = image.to(device=device, dtype=torch.float32)
+            true_mask = true_mask.to(device=device, dtype=torch.int64)
 
+            pred = net(image)
             loss = loss_fn(pred, true_mask)
 
             # Backpropagation
