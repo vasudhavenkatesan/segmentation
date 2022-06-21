@@ -6,7 +6,10 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset
 import logging
+
+import config
 from augmentation import transforms
+from augmentation.transforms import *
 
 
 def get_file_list_from_dir(filepath):
@@ -26,16 +29,16 @@ class Hdf5Dataset(Dataset):
         self.contains_mask = contains_mask
         # stores the image and label ids only
         self.get_image_id(self, filepath)
-        self.transform = transform
         self.dimension = image_dim
         self.dirpath = filepath
+        self.rand_crop = RandomCrop3D((60, 506, 506), config.image_dim)
 
     def __getitem__(self, index):
         # lazy loading of data
         image, label = self.get_image_and_label(self, index)
         print(f'Image - {image.shape}, mask - {label.shape}')
-        image = self.transform_fn(image)
-        label = self.transform_fn(label, is_mask=True)
+        image = self.rand_crop(image)
+        label = self.rand_crop(label)
         return image, label
 
     def __len__(self):

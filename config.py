@@ -9,6 +9,8 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 
 input_dimension = [16, 256, 256]
 
+image_dim = (16, 320, 320)
+
 n_channels = 60
 
 n_classes = 3
