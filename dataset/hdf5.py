@@ -37,8 +37,8 @@ class Hdf5Dataset(Dataset):
         # lazy loading of data
         image, label = self.get_image_and_label(self, index)
         print(f'Image - {image.shape}, mask - {label.shape}')
-        image = self.rand_crop(image)
-        label = self.rand_crop(label)
+        image, label = self.rand_crop(image, label)
+        print(f'After Image - {image.shape}, mask - {label.shape}')
         return image, label
 
     def __len__(self):

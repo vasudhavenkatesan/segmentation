@@ -13,7 +13,7 @@ from unet.unet import UNET
 from dataset import hdf5
 from eval.evaluate import mIoU
 import config
-from eval import DiceLoss
+from eval.DiceLoss import DiceLoss
 
 # Logger
 logger = config.get_logger()
