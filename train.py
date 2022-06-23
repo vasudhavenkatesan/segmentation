@@ -8,11 +8,12 @@ from torch.optim import lr_scheduler
 from torch.utils.tensorboard import SummaryWriter
 import torch.nn.functional as F
 
-import evaluate
+from eval import evaluate
 from unet.unet import UNET
 from dataset import hdf5
-from evaluate import mIoU
+from eval.evaluate import mIoU
 import config
+from eval import DiceLoss
 
 # Logger
 logger = config.get_logger()
@@ -47,7 +48,7 @@ def training_fn(net,
 
     # specify loss functions, optimizers
     # specify loss functions, optimizers
-    loss_fn = nn.CrossEntropyLoss()
+    criterion = DiceLoss(ignore_index=[2], reduction='mean')
     optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)
     scheduler = lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
 
@@ -72,15 +73,16 @@ def training_fn(net,
             true_mask = batch[1]
             image = image.to(device=device, dtype=torch.float32)
             true_mask = true_mask.to(device=device, dtype=torch.int64)
-
+            true_mask = F.one_hot(true_mask, config.n_classes)
+            true_mask = true_mask.permute(0, 1, 4, 2, 3)
+            true_mask = true_mask[-1, :, -1, :, :]
+            true_mask = true_mask.type(torch.float32)
             print(f'True mask {true_mask.shape}')
             optimizer.zero_grad()
 
             pred = net(image)
             pred = pred[:, -1, :, :]
-            # pred_ = pred.type(torch.LongTensor)
-            # print(f'Pred shape - {pred_.shape}')
-            loss = evaluate.dice_loss(true_mask, pred)
+            loss = criterion(pred, true_mask)
             i += 1
             # Backpropagation
 
@@ -111,13 +113,13 @@ def training_fn(net,
             true_mask = true_mask.type(torch.float32)
 
             val_loss = 0
-            with torch.no_grad():
-                # predict the mask
-                pred = net(image)
-                loss = loss_fn(pred, true_mask)
-                val_loss += loss
+            # with torch.no_grad():
+            #     # predict the mask
+            #     pred = net(image)
+            #     loss = loss_fn(pred, true_mask)
+            #     val_loss += loss
         print(f'Validation loss : {val_loss:.4f}')
-        print(f'Accuracy score, Hamming loss - : {mIoU(pred, true_mask)}')
+        # print(f'Accuracy score, Hamming loss - : {mIoU(pred, true_mask)}')
     torch.cuda.empty_cache()
     writer.flush()
     # save checkpoint

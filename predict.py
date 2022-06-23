@@ -1,6 +1,4 @@
 import argparse
-import string
-from pathlib import Path
 
 import torch
 import torch.nn.functional as F
@@ -8,7 +6,6 @@ import torch.nn.functional as F
 import config
 from unet.unet import UNET
 from dataset import hdf5
-from evaluate import mIoU
 
 logger = config.get_logger()
 
