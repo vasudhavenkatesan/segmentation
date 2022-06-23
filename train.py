@@ -103,7 +103,8 @@ def training_fn(net,
             image = image.permute(1, 0, 2, 3)
             mask = batch[1]
             image = image.to(device=device, dtype=torch.float32)
-            true_mask = true_mask.to(device=device, dtype=torch.int64)
+            true_mask = mask.to(device=device, dtype=torch.int64)
+            print(f'true mask before - {true_mask.shape}')
             true_mask = one_hot_encoding(true_mask, config.n_classes)
             true_mask = true_mask.type(torch.float32)
 
