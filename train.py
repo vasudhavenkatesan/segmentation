@@ -11,7 +11,7 @@ import torch.nn.functional as F
 from eval import evaluate
 from unet.unet import UNET
 from dataset import hdf5
-from eval.evaluate import mIoU
+from utils import one_hot_encoding
 import config
 from eval.DiceLoss import DiceLoss
 
@@ -72,10 +72,8 @@ def training_fn(net,
             image = image.permute(1, 0, 2, 3)
             true_mask = batch[1]
             image = image.to(device=device, dtype=torch.float32)
-            true_mask = true_mask.to(device=device, dtype=torch.int64)
-            true_mask = F.one_hot(true_mask, config.n_classes)
-            true_mask = true_mask.permute(0, 1, 4, 2, 3)
-            true_mask = true_mask[-1, :, -1, :, :]
+            true_mask = true_mask.to(device=device)
+            true_mask = one_hot_encoding(true_mask, config.n_classes)
             true_mask = true_mask.type(torch.float32)
             print(f'True mask {true_mask.shape}')
             optimizer.zero_grad()
@@ -91,9 +89,8 @@ def training_fn(net,
 
             running_loss += loss.item()
             # print(f'Accuracy score, Hamming loss - : {mIoU(pred, true_mask)}')
-            if (i == n_train):
+            if i == n_train:
                 print(f'Epoch : {epoch}, running loss : {running_loss}, loss: {(running_loss / i):.4f}')
-                evaluate.dice_loss(true_mask, )
 
             writer.add_scalar("Loss/train", (running_loss / i), epoch)
 
@@ -107,17 +104,15 @@ def training_fn(net,
             mask = batch[1]
             image = image.to(device=device, dtype=torch.float32)
             true_mask = true_mask.to(device=device, dtype=torch.int64)
-            true_mask = F.one_hot(true_mask, config.n_classes)
-            true_mask = true_mask.permute(0, 1, 4, 2, 3)
-            true_mask = true_mask[:, -1, :, :]
+            true_mask = one_hot_encoding(true_mask, config.n_classes)
             true_mask = true_mask.type(torch.float32)
 
             val_loss = 0
-            # with torch.no_grad():
-            #     # predict the mask
-            #     pred = net(image)
-            #     loss = loss_fn(pred, true_mask)
-            #     val_loss += loss
+            with torch.no_grad():
+                # predict the mask
+                pred = net(image)
+                loss = criterion(pred, true_mask)
+                val_loss += loss
         print(f'Validation loss : {val_loss:.4f}')
         # print(f'Accuracy score, Hamming loss - : {mIoU(pred, true_mask)}')
     torch.cuda.empty_cache()
@@ -160,6 +155,6 @@ if __name__ == '__main__':
 
     training_fn(net=model, device=device, epochs=parameter_arguments.epochs, batch_size=parameter_arguments.batch_size,
                 learning_rate=parameter_arguments.learning_rate, valiation_percent=parameter_arguments.validation_perc,
-                input_dim=config.input_dimension)
+                input_dim=config.image_dim)
 
     logger.info('Process completed')

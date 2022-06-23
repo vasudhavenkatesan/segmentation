@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import numpy as np
 
 
 class BinaryDiceLoss(nn.Module):
@@ -96,7 +95,7 @@ class DiceLoss(nn.Module):
                     assert self.weight.shape[0] == target.shape[1], \
                         'Expect weight shape [{}], get[{}]'.format(target.shape[1], self.weight.shape[0])
                     dice_loss *= self.weights[i]
-                total_loss += (dice_loss)
+                total_loss += dice_loss
         loss = total_loss / (target.size(1) - len(self.ignore_index))
         return loss
 
@@ -105,29 +104,7 @@ def test():
     input = torch.rand((16, 1, 25, 25))
     model = nn.Conv2d(1, 4, 3, padding=1)
     target = torch.randint(0, 4, (16, 1, 25, 25)).float()
-    target = make_one_hot(target, num_classes=4)
     criterion = DiceLoss(ignore_index=[2], reduction='mean')
     loss = criterion(model(input), target)
     loss.backward()
     print(loss.item())
-
-
-def make_one_hot(input, num_classes=None):
-    """Convert class index tensor to one hot encoding tensor.
-    Args:
-         input: A tensor of shape [N, 1, *]
-         num_classes: An int of number of class
-    Shapes:
-        predict: A tensor of shape [N, *] without sigmoid activation function applied
-        target: A tensor of shape same with predict
-    Returns:
-        A tensor of shape [N, num_classes, *]
-    """
-    if num_classes is None:
-        num_classes = input.max() + 1
-    shape = np.array(input.shape)
-    shape[1] = num_classes
-    shape = tuple(shape)
-    result = torch.zeros(shape)
-    result = result.scatter_(1, input.cpu().long(), 1)
-    return result

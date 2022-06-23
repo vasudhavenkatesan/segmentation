@@ -23,29 +23,23 @@ def get_file_list_from_dir(filepath):
 
 
 class Hdf5Dataset(Dataset):
-    def __init__(self, filepath, image_dim, transform=None, contains_mask: bool = True):
+    def __init__(self, filepath, image_dim, contains_mask: bool = True):
         logging.info('Initialising dataset from HDF5 files')
         self.image_id = {}
         self.contains_mask = contains_mask
         # stores the image and label ids only
         self.get_image_id(self, filepath)
-        self.dimension = image_dim
         self.dirpath = filepath
-        self.rand_crop = RandomCrop3D((60, 506, 506), config.image_dim)
+        self.rand_crop = RandomCrop3D((60, 506, 506), image_dim)
 
     def __getitem__(self, index):
         # lazy loading of data
         image, label = self.get_image_and_label(self, index)
-        print(f'Image - {image.shape}, mask - {label.shape}')
         image, label = self.rand_crop(image, label)
-        print(f'After Image - {image.shape}, mask - {label.shape}')
         return image, label
 
     def __len__(self):
         return self.image_id.__len__()
-
-    def transform_fn(self, data, is_mask: bool = False):
-        return transforms.resize_image(self.dimension, data, is_mask)
 
     @staticmethod
     def get_image_id(self, dirpath):
