@@ -2,6 +2,7 @@ import argparse
 import os.path
 
 import torch
+import torch.nn as nn
 from torch.utils.data import DataLoader, random_split
 from torch.optim import lr_scheduler
 from torch.utils.tensorboard import SummaryWriter
@@ -47,9 +48,9 @@ def training_fn(net,
 
     # specify loss functions, optimizers
 
-    criterion = DiceLoss(ignore_index=[2], reduction='mean')
+    # criterion = DiceLoss(ignore_index=[2], reduction='mean')
+    criterion = nn.CrossEntropyLoss(ignore_index=2)
     optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)
-    scheduler = lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
 
     for epoch in range(1, epochs + 1):
         print('Epoch {}/{}'.format(epoch, epochs))
@@ -76,13 +77,13 @@ def training_fn(net,
             image = image.to(device=device, dtype=torch.float32)
             true_mask = true_mask.to(device=device, dtype=torch.int64)
             true_mask = one_hot_encoding(true_mask, config.n_classes)
-            true_mask = true_mask.type(torch.float32)
+            true_mask = true_mask.type(torch.long)
             print(f'True mask {true_mask.shape}')
             optimizer.zero_grad()
 
             pred = net(image)
             plot_2d_or_3d_image(data=pred, step=0, writer=writer, frame_dim=-1, tag='pred_{i}')
-            pred = pred[:, -1, :, :]
+            # pred = pred[:, -1, :, :]
             loss = criterion(pred, true_mask)
             i += 1
             # Backpropagation
@@ -115,7 +116,7 @@ def training_fn(net,
             with torch.no_grad():
                 # predict the mask
                 pred = net(image)
-                pred = pred[:, -1, :, :]
+                # pred = pred[:, -1, :, :]
                 loss = criterion(pred, true_mask)
                 val_loss += loss
         print(f'Validation loss : {val_loss:.4f}')
