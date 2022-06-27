@@ -2,18 +2,17 @@ import argparse
 import os.path
 
 import torch
-import torch.nn as nn
 from torch.utils.data import DataLoader, random_split
 from torch.optim import lr_scheduler
 from torch.utils.tensorboard import SummaryWriter
-import torch.nn.functional as F
 
-from eval import evaluate
 from unet.unet import UNET
 from dataset import hdf5
 from utils import one_hot_encoding
 import config
 from eval.DiceLoss import DiceLoss
+
+from monai.visualize import plot_2d_or_3d_image
 
 # Logger
 logger = config.get_logger()
@@ -47,7 +46,7 @@ def training_fn(net,
     val_dataloader = DataLoader(val_set, shuffle=False, batch_size=batch_size, num_workers=1, pin_memory=True)
 
     # specify loss functions, optimizers
-    # specify loss functions, optimizers
+
     criterion = DiceLoss(ignore_index=[2], reduction='mean')
     optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)
     scheduler = lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
@@ -71,6 +70,9 @@ def training_fn(net,
             image = batch[0]
             image = image.permute(1, 0, 2, 3)
             true_mask = batch[1]
+
+            plot_2d_or_3d_image(data=image, step=0, writer=writer, frame_dim=-1, tag='image')
+            plot_2d_or_3d_image(data=true_mask, step=0, writer=writer, frame_dim=-1, tag='GT')
             image = image.to(device=device, dtype=torch.float32)
             true_mask = true_mask.to(device=device)
             true_mask = one_hot_encoding(true_mask, config.n_classes)
@@ -79,6 +81,7 @@ def training_fn(net,
             optimizer.zero_grad()
 
             pred = net(image)
+            plot_2d_or_3d_image(data=pred, step=0, writer=writer, frame_dim=-1, tag='pred')
             pred = pred[:, -1, :, :]
             loss = criterion(pred, true_mask)
             i += 1
@@ -118,6 +121,7 @@ def training_fn(net,
         # print(f'Accuracy score, Hamming loss - : {mIoU(pred, true_mask)}')
     torch.cuda.empty_cache()
     writer.flush()
+
     # save checkpoint
     if save_checkpoint:
         if os.path.exists(checkpoint_path):  # checking if there is a file with this name
