@@ -71,17 +71,17 @@ def training_fn(net,
             image = image.permute(1, 0, 2, 3)
             true_mask = batch[1]
 
-            plot_2d_or_3d_image(data=image, step=0, writer=writer, frame_dim=-1, tag='image')
-            plot_2d_or_3d_image(data=true_mask, step=0, writer=writer, frame_dim=-1, tag='GT')
+            plot_2d_or_3d_image(data=image, step=0, writer=writer, frame_dim=-1, tag='image_{i}')
+            plot_2d_or_3d_image(data=true_mask, step=0, writer=writer, frame_dim=-1, tag='GT_{i}')
             image = image.to(device=device, dtype=torch.float32)
-            true_mask = true_mask.to(device=device)
+            true_mask = true_mask.to(device=device, dtype=torch.int64)
             true_mask = one_hot_encoding(true_mask, config.n_classes)
             true_mask = true_mask.type(torch.float32)
             print(f'True mask {true_mask.shape}')
             optimizer.zero_grad()
 
             pred = net(image)
-            plot_2d_or_3d_image(data=pred, step=0, writer=writer, frame_dim=-1, tag='pred')
+            plot_2d_or_3d_image(data=pred, step=0, writer=writer, frame_dim=-1, tag='pred_{i}')
             pred = pred[:, -1, :, :]
             loss = criterion(pred, true_mask)
             i += 1
@@ -97,7 +97,7 @@ def training_fn(net,
 
             writer.add_scalar("Loss/train", (running_loss / i), epoch)
 
-        # validation
+            # validation
         logger.info('Validation step')
         net.eval()
 
@@ -115,6 +115,7 @@ def training_fn(net,
             with torch.no_grad():
                 # predict the mask
                 pred = net(image)
+                pred = pred[:, -1, :, :]
                 loss = criterion(pred, true_mask)
                 val_loss += loss
         print(f'Validation loss : {val_loss:.4f}')
