@@ -21,21 +21,29 @@ class UNET(nn.Module):
 
     def forward(self, x):
         skip1 = self.encoder(x)
+        print(f'After skip1 - {skip1.shape}')
         skip2 = self.down1(skip1)
+        print(f'After skip2 - {skip2.shape}')
         skip3 = self.down2(skip2)
+        print(f'After skip3 - {skip3.shape}')
         skip4 = self.down3(skip3)
+        print(f'After skip4 - {skip4.shape}')
         skip5 = self.down4(skip4)
+        print(f'After skip5 - {skip5.shape}')
         x = self.up1(skip5, skip4)
+        print(f'After decoding1 - {x.shape}')
         x = self.up2(x, skip3)
+        print(f'After dec2 - {x.shape}')
         x = self.up3(x, skip2)
+        print(f'After dec3 - {x.shape}')
         x = self.up4(x, skip1)
         final = self.out(x)
         return final
 
 
 def test():
-    x = torch.randn((16, 1, 256, 256))
-    model = UNET(n_channels=1, n_classes=3)
+    x = torch.randn((1, 1, 572, 572))
+    model = UNET(n_channels=1, n_classes=2)
     model.to(device)
     preds = model(x)
     print(f'Final - {preds.shape}')

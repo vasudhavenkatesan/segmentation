@@ -14,6 +14,7 @@ import config
 from eval.DiceLoss import DiceLoss
 
 from monai.visualize import plot_2d_or_3d_image
+import matplotlib.pyplot as plt
 
 # Logger
 logger = config.get_logger()
@@ -32,7 +33,7 @@ def training_fn(net,
                 batch_size: int = 1,
                 learning_rate: float = 1e-3,
                 valiation_percent=0.1,
-                save_checkpoint: bool = True):
+                save_checkpoint: bool = False):
     # create dataset
     dataset = hdf5.Hdf5Dataset(data_file_path, image_dim=input_dim, contains_mask=True)
 
@@ -49,7 +50,10 @@ def training_fn(net,
     # specify loss functions, optimizers
 
     # criterion = DiceLoss(ignore_index=[2], reduction='mean')
-    criterion = nn.CrossEntropyLoss(ignore_index=2)
+    class_weights = [1.0, 100.0, 1.0]
+    c_weights = torch.tensor(class_weights, dtype=torch.float)
+    c_weights = c_weights.to(device=device, dtype=torch.float32)
+    criterion = nn.CrossEntropyLoss(weight=c_weights, ignore_index=2)
     optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)
 
     for epoch in range(1, epochs + 1):
@@ -61,7 +65,7 @@ def training_fn(net,
         # scheduler.step()
         for param_group in optimizer.param_groups:
             print("LR", param_group['lr'])
-
+        plt.figure("Segmentation_output", (18, 6))
         net.to(device)
         net.train()
         running_loss = 0
@@ -72,17 +76,33 @@ def training_fn(net,
             image = image.permute(1, 0, 2, 3)
             true_mask = batch[1]
 
-            plot_2d_or_3d_image(data=image, step=0, writer=writer, frame_dim=-1, tag='image_{i}')
-            plot_2d_or_3d_image(data=true_mask, step=0, writer=writer, frame_dim=-1, tag='GT_{i}')
             image = image.to(device=device, dtype=torch.float32)
             true_mask = true_mask.to(device=device, dtype=torch.int64)
             true_mask = one_hot_encoding(true_mask, config.n_classes)
             true_mask = true_mask.type(torch.long)
-            print(f'True mask {true_mask.shape}')
+            # print(f'True mask {true_mask.shape}')
+
+            if (epoch == epochs):
+                # Plot the image and ground truth
+                plt.subplot(1, 3, 1)
+                plt.title(f'Image')
+                plt.imshow(batch[0][-1, 12, :, :], cmap="gray")
+                plt.subplot(1, 3, 2)
+                plt.title(f'GT')
+                plt.imshow(batch[1][-1, 12, :, :])
+
             optimizer.zero_grad()
 
             pred = net(image)
-            plot_2d_or_3d_image(data=pred, step=0, writer=writer, frame_dim=-1, tag='pred_{i}')
+            if (epoch == epochs):
+                print(f'Output for graph')
+                pred_for_plot = pred.detach().cpu().numpy()
+                predic = torch.from_numpy(pred_for_plot)
+                pred_for_plot = torch.unsqueeze(predic.argmax(dim=1), 1)
+
+                plt.subplot(1, 3, 3)
+                plt.title('Predicted Mask')
+                plt.imshow(pred_for_plot[12, -1, :, :])
             # pred = pred[:, -1, :, :]
             loss = criterion(pred, true_mask)
             i += 1
@@ -92,13 +112,14 @@ def training_fn(net,
             optimizer.step()
 
             running_loss += loss.item()
-            # print(f'Accuracy score, Hamming loss - : {mIoU(pred, true_mask)}')
-            if i == n_train:
-                print(f'Epoch : {epoch}, running loss : {running_loss}, loss: {(running_loss / i):.4f}')
 
-            writer.add_scalar("Loss/train", (running_loss / i), epoch)
+            # if i == n_train:
+            print(f'Epoch : {epoch}, running loss : {running_loss}, loss: {(running_loss):.4f}')
 
-            # validation
+        writer.add_scalar("Loss/train", (running_loss / i), epoch)
+        plt.savefig('Segmentation_output')
+        plt.show()
+        # validation
         logger.info('Validation step')
         net.eval()
 
@@ -106,11 +127,20 @@ def training_fn(net,
             image = batch[0]
             image = image.permute(1, 0, 2, 3)
             mask = batch[1]
+            if (epoch == epochs):
+                # Plot the image and ground truth
+                plt.subplot(1, 3, 1)
+                plt.title(f'Image')
+                plt.imshow(batch[0][-1, 12, :, :], cmap="gray")
+                plt.subplot(1, 3, 2)
+                plt.title(f'GT')
+                plt.imshow(batch[1][-1, 12, :, :], cmap="gray")
+
             image = image.to(device=device, dtype=torch.float32)
             true_mask = mask.to(device=device, dtype=torch.int64)
-            print(f'true mask before - {true_mask.shape}')
+
             true_mask = one_hot_encoding(true_mask, config.n_classes)
-            true_mask = true_mask.type(torch.float32)
+            true_mask = true_mask.type(torch.long)
 
             val_loss = 0
             with torch.no_grad():
@@ -118,8 +148,19 @@ def training_fn(net,
                 pred = net(image)
                 # pred = pred[:, -1, :, :]
                 loss = criterion(pred, true_mask)
+
                 val_loss += loss
-        print(f'Validation loss : {val_loss:.4f}')
+                if (epoch == epochs):
+                    pred_for_plot = pred.detach().cpu().numpy()
+                    predic = torch.from_numpy(pred_for_plot)
+                    pred_for_plot = torch.unsqueeze(predic.argmax(dim=1), 1)
+
+                    plt.subplot(1, 3, 3)
+                    plt.title('Predicted Mask')
+                    plt.imshow(pred_for_plot[12, -1, :, :], cmap="gray")
+            print(f'Validation loss : {val_loss:.4f}')
+            writer.add_scalar("Validation Loss", (val_loss), epoch)
+
         # print(f'Accuracy score, Hamming loss - : {mIoU(pred, true_mask)}')
     torch.cuda.empty_cache()
     writer.flush()
@@ -139,7 +180,7 @@ def get_param_arguments():
     parser.add_argument('--epochs', '-e', metavar='E', type=int, default=1, help='Number of epochs(training cycles)')
     parser.add_argument('--batch_size', '-b', type=int, metavar='B', default=1,
                         help='Batch size - Number of datasets in each training batch')
-    parser.add_argument('--learning_rate', '-lr', metavar='LR', type=float, default=1e-5,
+    parser.add_argument('--learning_rate', '-lr', metavar='LR', type=float, default=3e-5,
                         help='Learning rate for optimizer')
     parser.add_argument('--validation_perc', '-val', metavar='VALPERC', type=float, default=0.1,
                         help='Percent of validation set')

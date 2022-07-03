@@ -9,11 +9,11 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 
 image_dim = (16, 256, 256)
 
-n_channels = 60
+n_channels = 1
 
 n_classes = 3
 
-checkpoint_dir = os.path.join("checkpoints", "Model.pth")
+checkpoint_dir = os.path.join("checkpoints", "Model1.pth")
 
 
 def get_logger():
