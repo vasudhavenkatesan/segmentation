@@ -8,6 +8,7 @@ from dataset import hdf5
 from augmentation import transforms
 from torch.utils.tensorboard import SummaryWriter
 from monai.visualize import blend_images, matshow3d, plot_2d_or_3d_image
+from datetime import datetime
 
 if __name__ == '__main__':
     # C,H,W of the image
@@ -19,15 +20,16 @@ if __name__ == '__main__':
     print(val[1].shape)
 
     # sw = SummaryWriter()
-
-    plt.figure("check", (18, 6))
+    date = datetime.now().strftime("%d_%m_%I_%M_%S_%p")
+    plt.figure(f'Segmentation_{date}', (18, 6))
+    # plt.figure("check", (18, 6))
     plt.subplot(1, 3, 1)
     plt.title('Image 1')
     plt.imshow(val[0][12, :, :], cmap="gray")
     plt.subplot(1, 3, 2)
     plt.title(f'Label 1')
-    plt.imshow(val[1][12, :, :])
-    plt.show()
+    plt.imshow(val[1][12, :, :], cmap="gray")
+    plt.savefig(f'Segmentation_{date}')
     # print(val[0])
     # plot_2d_or_3d_image(data=val[0], step=0, writer=sw, frame_dim=-1, tag='image')
     # plot_2d_or_3d_image(data=val[1], step=0, writer=sw, frame_dim=-1, tag='mask')

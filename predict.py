@@ -18,15 +18,16 @@ def predict(net, image, input_dim, device):
     n_preds = img.__len__()
     pred_masks = []
     for i in range(0, n_preds):
-        image = torch.unsqueeze(img.__getitem__(i)[0], 0).to(device=device, dtype=torch.float32)
-        mask = torch.unsqueeze(img.__getitem__(i)[1], 0).to(device=device, dtype=torch.float32)
+        image = img.__getitem__(i)[0].to(device=device, dtype=torch.float32)
+        mask = img.__getitem__(i)[1].to(device=device, dtype=torch.float32)
         plt.subplot(1, 3, 1)
         plt.title(f'Image')
-        plt.imshow(image[-1, 10, :, :], cmap="gray")
+        plt.imshow(image[10, :, :], cmap="gray")
         plt.subplot(1, 3, 2)
         plt.title(f'Mask')
-        plt.imshow(mask[-1, 10, :, :], cmap="gray")
-        image = image.permute(1, 0, 2, 3)
+        plt.imshow(mask[10, :, :], cmap="gray")
+        image = image[:, None, :, :]
+        # 0, 2, 3)
         with torch.no_grad():
             prediction = net(image)
             print(f'After prediction {prediction.shape}')

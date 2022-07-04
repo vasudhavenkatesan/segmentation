@@ -16,3 +16,7 @@ logs
 
 # Ignore IDE specific files
 .idea/
+
+# Ignore image files
+*.png
+

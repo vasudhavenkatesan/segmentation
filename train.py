@@ -4,9 +4,9 @@ import os.path
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, random_split
-from torch.optim import lr_scheduler
-from torch.utils.tensorboard import SummaryWriter
 
+from torch.utils.tensorboard import SummaryWriter
+from datetime import datetime
 from unet.unet import UNET
 from dataset import hdf5
 from utils import one_hot_encoding
@@ -62,10 +62,8 @@ def training_fn(net,
         if os.path.exists(checkpoint_path):  # checking if there is a file with this name
             checkpoint = torch.load(checkpoint_path)
             net.load_state_dict(checkpoint)
-        # scheduler.step()
-        for param_group in optimizer.param_groups:
-            print("LR", param_group['lr'])
-        plt.figure("Segmentation_output", (18, 6))
+        date = datetime.now().strftime("%d_%m_%I_%M_%S_%p")
+        plt.figure(f'Segmentation_{date}', (18, 6))
         net.to(device)
         net.train()
         running_loss = 0
@@ -117,7 +115,8 @@ def training_fn(net,
             print(f'Epoch : {epoch}, running loss : {running_loss}, loss: {(running_loss):.4f}')
 
         writer.add_scalar("Loss/train", (running_loss / i), epoch)
-        plt.savefig('Segmentation_output')
+
+        plt.savefig(f'Segmentation_{date}')
         plt.show()
         # validation
         logger.info('Validation step')
