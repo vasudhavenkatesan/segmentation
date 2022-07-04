@@ -18,6 +18,8 @@ if __name__ == '__main__':
     training_data = hdf5.Hdf5Dataset(img_filepath, (16, 506, 506), True)
     train_dataloader = DataLoader(training_data, batch_size=4, shuffle=True, num_workers=2)
     val = training_data.__getitem__(0)
+    print(val[0].shape)
+    print(val[1].shape)
 
     # sw = SummaryWriter()
     # date = datetime.now().strftime("%d_%m_%I_%M_%S_%p")

@@ -1,5 +1,7 @@
 import numpy as np
 import torch
+from scipy.ndimage import zoom
+from operator import floordiv
 
 
 # Add padding to the 3D data
@@ -19,8 +21,11 @@ def calc_size_for_padding(reqd_dim, data_dim):
     return l_size, r_size
 
 
-def resize_image(reqd_dim, input, is_mask: bool):
-    return input[0:reqd_dim[0], 0:reqd_dim[1], 0:reqd_dim[2]]
+def resize_image(reqd_dim, input):
+    resize_values = (reqd_dim[0] / input.shape[0],
+                     reqd_dim[1] / input.shape[1],
+                     reqd_dim[2] / input.shape[2])
+    return zoom(input, resize_values)
 
 
 class RandomCrop3D:

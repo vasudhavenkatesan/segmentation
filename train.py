@@ -6,14 +6,11 @@ import torch.nn as nn
 from torch.utils.data import DataLoader, random_split
 
 from torch.utils.tensorboard import SummaryWriter
-from datetime import datetime
 from unet.unet import UNET
 from dataset import hdf5
 from utils import one_hot_encoding, plot_image
 import config
 from eval.DiceLoss import DiceLoss
-
-import matplotlib.pyplot as plt
 
 # Logger
 logger = config.get_logger()
@@ -65,8 +62,6 @@ def training_fn(net,
         print('Epoch {}/{}'.format(epoch, epochs))
         print('-' * 10)
 
-        date = datetime.now().strftime("%d_%m_%I_%M_%S_%p")
-        plt.figure(f'Segmentation_{date}', (18, 6))
         net.to(device)
         net.train()
         running_loss = 0
