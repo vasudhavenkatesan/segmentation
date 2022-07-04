@@ -4,7 +4,8 @@ import os.path
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, random_split
-
+from torch.optim import Adam
+from torch.optim.lr_scheduler import MultiStepLR
 from torch.utils.tensorboard import SummaryWriter
 from unet.unet import UNET
 from dataset import hdf5
@@ -51,7 +52,8 @@ def training_fn(net,
 
     # specify loss functions, optimizers
     criterion = nn.CrossEntropyLoss(weight=c_weights, ignore_index=2)
-    optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)
+    optimizer = Adam(net.parameters(), lr=learning_rate)
+    scheduler = MultiStepLR(optimizer, milestones=[50, 100, 150], gamma=0.1)
 
     # load model if it exists
     if os.path.exists(checkpoint_path):
@@ -59,6 +61,8 @@ def training_fn(net,
         net.load_state_dict(checkpoint)
 
     for epoch in range(1, epochs + 1):
+        logger.info('Epoch {}/{}'.format(epoch, epochs))
+        logger.info('-' * 15)
         print('Epoch {}/{}'.format(epoch, epochs))
         print('-' * 10)
 
@@ -86,6 +90,7 @@ def training_fn(net,
             # Backpropagation
             loss.backward()
             optimizer.step()
+            scheduler.step()
 
             running_loss += loss.item()
 
@@ -93,7 +98,7 @@ def training_fn(net,
                 plot_image(batch[0], batch[1], pred, 'train')
 
         print(f'Epoch : {epoch}, running loss : {running_loss}, loss: {(running_loss / i):.4f}')
-
+        logger.info(f'Epoch : {epoch}, running loss : {running_loss}, loss: {(running_loss / i)}')
         writer.add_scalar("Loss/train", (running_loss / i), epoch)
 
         # validation
@@ -123,6 +128,7 @@ def training_fn(net,
                     plot_image(batch[0], batch[1], pred, 'val')
 
         print(f'Validation loss : {val_loss:.4f}')
+        logger.info(f'Validation loss : {val_loss}')
         writer.add_scalar("Validation Loss", val_loss, epoch)
 
     torch.cuda.empty_cache()
