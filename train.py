@@ -9,11 +9,10 @@ from torch.utils.tensorboard import SummaryWriter
 from datetime import datetime
 from unet.unet import UNET
 from dataset import hdf5
-from utils import one_hot_encoding
+from utils import one_hot_encoding, plot_image
 import config
 from eval.DiceLoss import DiceLoss
 
-from monai.visualize import plot_2d_or_3d_image
 import matplotlib.pyplot as plt
 
 # Logger
@@ -33,7 +32,8 @@ def training_fn(net,
                 batch_size: int = 1,
                 learning_rate: float = 1e-3,
                 valiation_percent=0.1,
-                save_checkpoint: bool = False):
+                save_checkpoint: bool = False,
+                load_checkpoint: bool = False):
     # create dataset
     dataset = hdf5.Hdf5Dataset(data_file_path, image_dim=input_dim, contains_mask=True)
 
@@ -47,21 +47,24 @@ def training_fn(net,
     train_dataloader = DataLoader(train_set, shuffle=True, batch_size=batch_size, num_workers=1, pin_memory=True)
     val_dataloader = DataLoader(val_set, shuffle=False, batch_size=batch_size, num_workers=1, pin_memory=True)
 
-    # specify loss functions, optimizers
-
     # criterion = DiceLoss(ignore_index=[2], reduction='mean')
     class_weights = [1.0, 100.0, 1.0]
     c_weights = torch.tensor(class_weights, dtype=torch.float)
     c_weights = c_weights.to(device=device, dtype=torch.float32)
+
+    # specify loss functions, optimizers
     criterion = nn.CrossEntropyLoss(weight=c_weights, ignore_index=2)
     optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)
+
+    # load model if it exists
+    if os.path.exists(checkpoint_path):
+        checkpoint = torch.load(checkpoint_path)
+        net.load_state_dict(checkpoint)
 
     for epoch in range(1, epochs + 1):
         print('Epoch {}/{}'.format(epoch, epochs))
         print('-' * 10)
-        if os.path.exists(checkpoint_path):  # checking if there is a file with this name
-            checkpoint = torch.load(checkpoint_path)
-            net.load_state_dict(checkpoint)
+
         date = datetime.now().strftime("%d_%m_%I_%M_%S_%p")
         plt.figure(f'Segmentation_{date}', (18, 6))
         net.to(device)
@@ -78,46 +81,26 @@ def training_fn(net,
             true_mask = true_mask.to(device=device, dtype=torch.int64)
             true_mask = one_hot_encoding(true_mask, config.n_classes)
             true_mask = true_mask.type(torch.long)
-            # print(f'True mask {true_mask.shape}')
-
-            if (epoch == epochs):
-                # Plot the image and ground truth
-                plt.subplot(1, 3, 1)
-                plt.title(f'Image')
-                plt.imshow(batch[0][-1, 12, :, :], cmap="gray")
-                plt.subplot(1, 3, 2)
-                plt.title(f'GT')
-                plt.imshow(batch[1][-1, 12, :, :])
 
             optimizer.zero_grad()
 
             pred = net(image)
-            if (epoch == epochs):
-                print(f'Output for graph')
-                pred_for_plot = pred.detach().cpu().numpy()
-                predic = torch.from_numpy(pred_for_plot)
-                pred_for_plot = torch.unsqueeze(predic.argmax(dim=1), 1)
-
-                plt.subplot(1, 3, 3)
-                plt.title('Predicted Mask')
-                plt.imshow(pred_for_plot[12, -1, :, :])
             # pred = pred[:, -1, :, :]
             loss = criterion(pred, true_mask)
             i += 1
             # Backpropagation
-
             loss.backward()
             optimizer.step()
 
             running_loss += loss.item()
 
-            # if i == n_train:
-            print(f'Epoch : {epoch}, running loss : {running_loss}, loss: {(running_loss):.4f}')
+            if epoch == epochs:
+                plot_image(batch[0], batch[1], pred, 'train')
+
+        print(f'Epoch : {epoch}, running loss : {running_loss}, loss: {(running_loss / i):.4f}')
 
         writer.add_scalar("Loss/train", (running_loss / i), epoch)
 
-        plt.savefig(f'Segmentation_{date}')
-        plt.show()
         # validation
         logger.info('Validation step')
         net.eval()
@@ -126,15 +109,6 @@ def training_fn(net,
             image = batch[0]
             image = image.permute(1, 0, 2, 3)
             mask = batch[1]
-            if (epoch == epochs):
-                # Plot the image and ground truth
-                plt.subplot(1, 3, 1)
-                plt.title(f'Image')
-                plt.imshow(batch[0][-1, 12, :, :], cmap="gray")
-                plt.subplot(1, 3, 2)
-                plt.title(f'GT')
-                plt.imshow(batch[1][-1, 12, :, :], cmap="gray")
-
             image = image.to(device=device, dtype=torch.float32)
             true_mask = mask.to(device=device, dtype=torch.int64)
 
@@ -149,18 +123,13 @@ def training_fn(net,
                 loss = criterion(pred, true_mask)
 
                 val_loss += loss
-                if (epoch == epochs):
-                    pred_for_plot = pred.detach().cpu().numpy()
-                    predic = torch.from_numpy(pred_for_plot)
-                    pred_for_plot = torch.unsqueeze(predic.argmax(dim=1), 1)
 
-                    plt.subplot(1, 3, 3)
-                    plt.title('Predicted Mask')
-                    plt.imshow(pred_for_plot[12, -1, :, :], cmap="gray")
-            print(f'Validation loss : {val_loss:.4f}')
-            writer.add_scalar("Validation Loss", (val_loss), epoch)
+                if epoch == epochs:
+                    plot_image(batch[0], batch[1], pred, 'val')
 
-        # print(f'Accuracy score, Hamming loss - : {mIoU(pred, true_mask)}')
+        print(f'Validation loss : {val_loss:.4f}')
+        writer.add_scalar("Validation Loss", val_loss, epoch)
+
     torch.cuda.empty_cache()
     writer.flush()
 
@@ -187,6 +156,8 @@ def get_param_arguments():
                         help='Number of channels in the image')
     parser.add_argument('--n_classes', '-n_class', metavar='NCLASS', type=int, default=3,
                         help='Number of output classes')
+    parser.add_argument('--load_cp', '-l_cp', metavar='LOADCHECKPOINT', type=bool, default=False,
+                        help='Load model from check point ')
     return parser.parse_args()
 
 
@@ -202,6 +173,6 @@ if __name__ == '__main__':
 
     training_fn(net=model, device=device, epochs=parameter_arguments.epochs, batch_size=parameter_arguments.batch_size,
                 learning_rate=parameter_arguments.learning_rate, valiation_percent=parameter_arguments.validation_perc,
-                input_dim=config.image_dim)
+                input_dim=config.image_dim, load_checkpoint=parameter_arguments.load_cp)
 
     logger.info('Process completed')
