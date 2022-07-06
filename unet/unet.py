@@ -34,10 +34,11 @@ class UNET(nn.Module):
 
 
 def test():
-    x = torch.randn((1, 1, 512, 512))
+    x = torch.randn((16, 1, 256, 256))
     model = UNET(n_channels=1, n_classes=2)
     model.to(device)
     preds = model(x)
+    print(preds.argmax(dim=1).shape)
     print(f'Final - {preds.shape}')
 
 

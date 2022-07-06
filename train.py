@@ -55,10 +55,11 @@ def training_fn(net,
     optimizer = Adam(net.parameters(), lr=learning_rate)
     scheduler = MultiStepLR(optimizer, milestones=[50, 100, 150], gamma=0.1)
 
-    # load model if it exists
-    if os.path.exists(checkpoint_path):
-        checkpoint = torch.load(checkpoint_path)
-        net.load_state_dict(checkpoint)
+    if load_checkpoint:
+        # load model if it exists
+        if os.path.exists(checkpoint_path):
+            checkpoint = torch.load(checkpoint_path)
+            net.load_state_dict(checkpoint)
 
     for epoch in range(1, epochs + 1):
         logger.info('Epoch {}/{}'.format(epoch, epochs))

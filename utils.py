@@ -16,7 +16,7 @@ def one_hot_encoding(input, n_classes):
 
 
 def plot_image(image, gt, pred, type='val'):
-    date = datetime.now().strftime("%d_%m_%I_%M_%S_%p")
+    date = datetime.now().strftime("%d_%m_%I_%M_%p")
     filename = 'Segm_' + type + '_' + date
     logger.info(f'Plotting image -  {filename} saved!')
     plt.figure(filename, (18, 6))
@@ -28,8 +28,9 @@ def plot_image(image, gt, pred, type='val'):
     plt.imshow(gt[-1, 12, :, :], cmap='gray')
     pred_for_plot = pred.detach().cpu().numpy()
     predic = torch.from_numpy(pred_for_plot)
-    pred_for_plot = torch.unsqueeze(predic.argmax(dim=1), 1)
+    pred_for_plot = predic.argmax(dim=1)
+    print(predic.shape)
     plt.subplot(1, 3, 3)
     plt.title('Predicted Mask')
-    plt.imshow(pred_for_plot[12, -1, :, :], cmap='gray')
+    plt.imshow(pred_for_plot[12, :, :], cmap='gray')
     plt.savefig(filename)

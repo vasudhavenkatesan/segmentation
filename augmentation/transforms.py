@@ -25,7 +25,7 @@ def resize_image(reqd_dim, input):
     resize_values = (reqd_dim[0] / input.shape[0],
                      reqd_dim[1] / input.shape[1],
                      reqd_dim[2] / input.shape[2])
-    return zoom(input, resize_values)
+    return zoom(input, resize_values, mode='nearest')
 
 
 class RandomCrop3D:
