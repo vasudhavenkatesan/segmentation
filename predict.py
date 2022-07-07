@@ -40,8 +40,7 @@ def predict(net, image, input_dim, device):
     print('saving plot ---------')
     plt.savefig('Segmentation')
     plt.show()
-    # print(f'Mean IoU -  {img.masks[i].shape}')
-    # pred_masks.append(mask.numpy())
+
     return pred_masks
 
 

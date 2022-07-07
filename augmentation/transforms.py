@@ -1,7 +1,6 @@
 import numpy as np
 import torch
 from scipy.ndimage import zoom
-from operator import floordiv
 
 
 # Add padding to the 3D data

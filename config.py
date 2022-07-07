@@ -13,6 +13,8 @@ n_channels = 1
 
 n_classes = 3
 
+ignore_label = [2]
+
 checkpoint_dir = os.path.join("checkpoints", "Model1.pth")
 
 

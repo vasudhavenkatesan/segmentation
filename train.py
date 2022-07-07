@@ -46,7 +46,7 @@ def training_fn(net,
     val_dataloader = DataLoader(val_set, shuffle=False, batch_size=batch_size, num_workers=1, pin_memory=True)
 
     # criterion = DiceLoss(ignore_index=[2], reduction='mean')
-    class_weights = train_set.compute_class_weights(train_set)
+    class_weights = dataset.compute_class_weights(dataset)
     c_weights = torch.tensor(class_weights, dtype=torch.float)
     c_weights = c_weights.to(device=device, dtype=torch.float32)
 
@@ -96,7 +96,7 @@ def training_fn(net,
             running_loss += loss.item()
 
             if epoch == epochs:
-                plot_image(batch[0], batch[1], pred, 'train')
+                plot_image(batch[0], batch[1], pred, 'train', i)
 
         print(f'Epoch : {epoch}, running loss : {running_loss}, loss: {(running_loss / i):.4f}')
         logger.info(f'Epoch : {epoch}, running loss : {running_loss}, loss: {(running_loss / i)}')
@@ -128,7 +128,7 @@ def training_fn(net,
                 val_loss += loss
 
                 if epoch == epochs:
-                    plot_image(batch[0], batch[1], pred, 'val')
+                    plot_image(batch[0], batch[1], pred, 'val', 0)
 
         print(f'Validation loss : {val_loss:.4f}')
         logger.info(f'Validation loss : {val_loss}')
