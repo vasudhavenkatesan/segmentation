@@ -3,7 +3,6 @@ from datetime import datetime
 import matplotlib.pyplot as plt
 import torch
 import config
-from skimage import color
 
 logger = config.get_logger()
 
@@ -33,6 +32,6 @@ def plot_image(image, gt, pred, type='val', i=0):
     pred_for_plot = predic.argmax(dim=1)
     plt.subplot(1, 3, 3)
     plt.title('Predicted Mask')
-    out1 = color.label2rgb(pred_for_plot[12, :, :], gt[-1, 12, :, :], kind='overlay', bg_label=0)
-    plt.imshow(out1)
+    # out1 = color.label2rgb(pred_for_plot[12, :, :], gt[-1, 12, :, :], kind='overlay', bg_label=0)
+    plt.imshow(pred_for_plot[12, :, :], cmap='gray')
     plt.savefig(filename)
