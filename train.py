@@ -53,7 +53,7 @@ def training_fn(net,
     # specify loss functions, optimizers
     criterion = nn.CrossEntropyLoss(weight=c_weights, ignore_index=2)
     optimizer = Adam(net.parameters(), lr=learning_rate)
-    scheduler = MultiStepLR(optimizer, milestones=[50, 100, 150], gamma=0.1)
+    # scheduler = MultiStepLR(optimizer, milestones=[50, 100, 150], gamma=0.1)
 
     if load_checkpoint:
         # load model if it exists
@@ -91,7 +91,7 @@ def training_fn(net,
             # Backpropagation
             loss.backward()
             optimizer.step()
-            scheduler.step()
+            # scheduler.step()
 
             running_loss += loss.item()
 
