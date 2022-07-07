@@ -46,7 +46,7 @@ def training_fn(net,
     val_dataloader = DataLoader(val_set, shuffle=False, batch_size=batch_size, num_workers=1, pin_memory=True)
 
     # criterion = DiceLoss(ignore_index=[2], reduction='mean')
-    class_weights = [1.0, 100.0, 1.0]
+    class_weights = train_set.compute_class_weights(train_set)
     c_weights = torch.tensor(class_weights, dtype=torch.float)
     c_weights = c_weights.to(device=device, dtype=torch.float32)
 
@@ -102,6 +102,8 @@ def training_fn(net,
         logger.info(f'Epoch : {epoch}, running loss : {running_loss}, loss: {(running_loss / i)}')
         writer.add_scalar("Loss/train", (running_loss / i), epoch)
 
+        if i == 1:
+            break;
         # validation
         logger.info('Validation step')
         net.eval()

@@ -1,7 +1,6 @@
 from pathlib import Path
 
 import h5py
-import numpy
 import numpy as np
 import torch
 from torch.utils.data import Dataset
@@ -10,6 +9,7 @@ import logging
 import config
 from augmentation import transforms
 from augmentation.transforms import *
+from sklearn.utils.class_weight import compute_class_weight
 
 
 def get_file_list_from_dir(filepath):
@@ -35,9 +35,9 @@ class Hdf5Dataset(Dataset):
     def __getitem__(self, index):
         # lazy loading of data
         image, label = self.get_image_and_label(self, index)
-        # image, label = self.rand_crop(image, label)
-        image = resize_image(config.image_dim, image)
-        label = resize_image(config.image_dim, label)
+        image, label = self.rand_crop(image, label)
+        # image = resize_image(config.image_dim, image)
+        # label = resize_image(config.image_dim, label)
         return image, label
 
     def __len__(self):
@@ -64,8 +64,24 @@ class Hdf5Dataset(Dataset):
             with h5py.File(mask, "r") as mask_file:
                 group = mask_file['ITKImage']
                 subgroup = group['0']
-                label = torch.from_numpy(np.array(subgroup['VoxelData']).astype(numpy.float32))
+                label = torch.from_numpy(np.array(subgroup['VoxelData']).astype(np.float32))
                 # replace mask label of 255 with 2
                 label[label == 255] = 2
         logging.info(f'Loaded image {id} - {file}')
         return image, label
+
+    @staticmethod
+    def compute_class_weights(self):
+        for id_val, i in zip(self.image_id, range(0, len(self.image_id))):
+            _, labels = self.get_image_and_label(self=self, id=id_val)
+            if i == 0:
+                all_labels = labels[0:60, 0:500, 0:500]
+                i += 1
+            else:
+                all_labels = np.concatenate((all_labels, np.array(labels[0:60, 0:500, 0:500])), axis=0)
+        class_weights = compute_class_weight(class_weight='balanced', classes=np.unique(all_labels.ravel()),
+                                             y=(all_labels.ravel()))
+        for i in range(len(class_weights)):
+            if i in config.ignore_label:
+                class_weights[i] = 0.0
+        return class_weights
