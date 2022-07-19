@@ -27,6 +27,7 @@ def plot_image(image, gt, pred, type='val', i=0):
     plt.imshow(image[-1, 12, :, :], cmap='gray')
     plt.subplot(1, 3, 2)
     plt.title(f'GT')
+    gt[gt == 2] = 0.5
     plt.imshow(gt[-1, 12, :, :], cmap='gray')
     predic = torch.from_numpy(pred.detach().cpu().numpy())
     pred_for_plot = predic.argmax(dim=1)
