@@ -7,7 +7,6 @@ from torch.utils.data import Dataset
 import logging
 
 import config
-from augmentation import transforms
 from augmentation.transforms import *
 from sklearn.utils.class_weight import compute_class_weight
 
@@ -35,9 +34,9 @@ class Hdf5Dataset(Dataset):
     def __getitem__(self, index):
         # lazy loading of data
         image, label = self.get_image_and_label(self, index)
-        image, label = self.rand_crop(image, label)
-        # image = resize_image(config.image_dim, image)
-        # label = resize_image(config.image_dim, label)
+        # image, label = self.rand_crop(image, label)
+        image = resize_image(config.image_dim, image)
+        label = resize_image(config.image_dim, label)
         return image, label
 
     def __len__(self):

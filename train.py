@@ -30,7 +30,7 @@ def training_fn(net,
                 batch_size: int = 1,
                 learning_rate: float = 1e-3,
                 valiation_percent=0.1,
-                save_checkpoint: bool = False,
+                save_checkpoint: bool = True,
                 load_checkpoint: bool = False):
     # create dataset
     dataset = hdf5.Hdf5Dataset(data_file_path, image_dim=input_dim, contains_mask=True)
