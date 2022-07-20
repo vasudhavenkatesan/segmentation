@@ -83,7 +83,7 @@ def training_fn(net,
             true_mask = one_hot_encoding(true_mask, config.n_classes)
 
             print(f'after one hot encoding {true_mask.shape}')
-            true_mask = true_mask.type(torch.float32)
+            true_mask = true_mask.type(torch.long)
 
             optimizer.zero_grad()
 

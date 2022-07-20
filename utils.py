@@ -11,8 +11,8 @@ logger = config.get_logger()
 def one_hot_encoding(input, n_classes):
     target = F.one_hot(input, n_classes)
     # Reorder the target with depth as batch size followed by num of classes, height, width
-    target = target.permute(0, 1, 5, 2, 3, 4)
-    target = target[-1, :, :, :, :]
+    # target = target.permute(0, 1, 5, 2, 3, 4)
+    target = target[-1, :, :, :, :, -1]
     return target
 
 
