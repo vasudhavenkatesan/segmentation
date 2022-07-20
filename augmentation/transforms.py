@@ -1,6 +1,8 @@
 import numpy as np
 import torch
 from scipy.ndimage import zoom
+import elasticdeform
+from PIL import Image
 
 
 # Add padding to the 3D data
@@ -25,6 +27,17 @@ def resize_image(reqd_dim, input):
                      reqd_dim[1] / input.shape[1],
                      reqd_dim[2] / input.shape[2])
     return zoom(input, resize_values, mode='nearest')
+
+
+def elastic_deform(image, label):
+    [image_deformed, label_deformed] = elasticdeform.deform_random_grid([image, label])
+    return image_deformed, label_deformed
+
+
+def grayscale(image, label):
+    image = Image.fromarray(np.uint8(image * 255), 'L')
+    label = Image.fromarray(np.uint8(label * 255), 'L')
+    return image, label
 
 
 class RandomCrop3D:

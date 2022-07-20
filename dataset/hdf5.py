@@ -35,6 +35,7 @@ class Hdf5Dataset(Dataset):
         # lazy loading of data
         image, label = self.get_image_and_label(self, index)
         # image, label = self.rand_crop(image, label)
+        image, label = elastic_deform(image, label)
         image = resize_image(config.image_dim, image)
         label = resize_image(config.image_dim, label)
         return image, label
@@ -57,13 +58,13 @@ class Hdf5Dataset(Dataset):
         with h5py.File(file, "r") as image_file:
             group = image_file['ITKImage']
             subgroup = group['0']
-            image = torch.from_numpy(np.array(subgroup['VoxelData']))
+            image = np.array(subgroup['VoxelData'])
         if self.contains_mask:
             mask = self.dirpath + '/' + file.name.rpartition('img')[0] + 'mask.h5'
             with h5py.File(mask, "r") as mask_file:
                 group = mask_file['ITKImage']
                 subgroup = group['0']
-                label = torch.from_numpy(np.array(subgroup['VoxelData']).astype(np.float32))
+                label = np.array(subgroup['VoxelData']).astype(np.float32)
                 # replace mask label of 255 with 2
                 label[label == 255] = 2
         logging.info(f'Loaded image {id} - {file}')

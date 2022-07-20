@@ -18,5 +18,7 @@ if __name__ == '__main__':
     img_filepath = 'dataset/data/2_2_2_downsampled'
     training_data = hdf5.Hdf5Dataset(img_filepath, (16, 506, 506), True)
     # train_dataloader = DataLoader(training_data, batch_size=1, shuffle=True, num_workers=1)
-    weights = training_data.compute_class_weights(training_data)
-    print(weights)
+    print('Initialised training')
+    val1 = training_data.__getitem__(1)
+    print(f'image - {val1[0]}')
+    print(f'mask - {val1[1]}')
