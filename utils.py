@@ -11,8 +11,8 @@ logger = config.get_logger()
 def one_hot_encoding(input, n_classes):
     target = F.one_hot(input, n_classes)
     # Reorder the target with depth as batch size followed by num of classes, height, width
-    # target = target.permute(0, 1, 5, 2, 3, 4)
-    target = target[-1, :, :, :, :, -1]
+    target = target.permute(0, 1, 4, 2, 3)
+    target = target[-1, :, -1, :, :]
     return target
 
 
@@ -36,9 +36,3 @@ def plot_image(image, gt, pred, type='val', i=0):
     plt.title('Predicted Mask')
     plt.imshow(pred_for_plot[12, :, :], cmap='gray')
     plt.savefig(filename)
-
-
-def test():
-    input = 3 * torch.rand([1, 1, 16, 256, 256])
-    input = input.to(device=config.device, dtype=torch.int64)
-    one_hot_encoding(input, 3)

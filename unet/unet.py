@@ -38,7 +38,7 @@ def test():
     model = UNET(n_channels=1, n_classes=3)
     model.to(device)
     preds = model(x)
-    # print(preds.argmax(dim=1).shape)
+    print(preds.argmax(dim=1).shape)
     print(f'Final - {preds.shape}')
 
 

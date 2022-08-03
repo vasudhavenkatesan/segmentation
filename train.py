@@ -30,7 +30,7 @@ def training_fn(net,
                 batch_size: int = 1,
                 learning_rate: float = 1e-3,
                 valiation_percent=0.1,
-                save_checkpoint: bool = False,
+                save_checkpoint: bool = True,
                 load_checkpoint: bool = False):
     # create dataset
     dataset = hdf5.Hdf5Dataset(data_file_path, image_dim=input_dim, contains_mask=True)
@@ -73,16 +73,13 @@ def training_fn(net,
         i = 0
         # training
         for batch in train_dataloader:
-            # image = image.permute(1, 0, 2, 3)
-            image = torch.unsqueeze(batch[0], dim=0)
-            true_mask = torch.unsqueeze(batch[1], dim=0)
+            image = batch[0]
+            image = image.permute(1, 0, 2, 3)
+            true_mask = batch[1]
 
-            print(f'Image shape {image.shape}, mask shape {true_mask.shape}')
             image = image.to(device=device, dtype=torch.float32)
             true_mask = true_mask.to(device=device, dtype=torch.int64)
             true_mask = one_hot_encoding(true_mask, config.n_classes)
-
-            print(f'after one hot encoding {true_mask.shape}')
             true_mask = true_mask.type(torch.long)
 
             optimizer.zero_grad()
@@ -105,35 +102,37 @@ def training_fn(net,
         logger.info(f'Epoch : {epoch}, running loss : {running_loss}, loss: {(running_loss / i)}')
         writer.add_scalar("Loss/train", (running_loss / i), epoch)
 
+        if i == 1:
+            break;
         # validation
         logger.info('Validation step')
         net.eval()
 
-        # for batch in val_dataloader:
-        #     image = batch[0]
-        #     image = image.permute(1, 0, 2, 3)
-        #     mask = batch[1]
-        #     image = image.to(device=device, dtype=torch.float32)
-        #     true_mask = mask.to(device=device, dtype=torch.int64)
-        #
-        #     true_mask = one_hot_encoding(true_mask, config.n_classes)
-        #     true_mask = true_mask.type(torch.long)
-        #
-        #     val_loss = 0
-        #     with torch.no_grad():
-        #         # predict the mask
-        #         pred = net(image)
-        #         # pred = pred[:, -1, :, :]
-        #         loss = criterion(pred, true_mask)
-        #
-        #         val_loss += loss
-        #
-        #         if epoch == epochs:
-        #             plot_image(batch[0], batch[1], pred, 'val', 0)
-        #
-        # print(f'Validation loss : {val_loss:.4f}')
-        # logger.info(f'Validation loss : {val_loss}')
-        # writer.add_scalar("Validation Loss", val_loss, epoch)
+        for batch in val_dataloader:
+            image = batch[0]
+            image = image.permute(1, 0, 2, 3)
+            mask = batch[1]
+            image = image.to(device=device, dtype=torch.float32)
+            true_mask = mask.to(device=device, dtype=torch.int64)
+
+            true_mask = one_hot_encoding(true_mask, config.n_classes)
+            true_mask = true_mask.type(torch.long)
+
+            val_loss = 0
+            with torch.no_grad():
+                # predict the mask
+                pred = net(image)
+                # pred = pred[:, -1, :, :]
+                loss = criterion(pred, true_mask)
+
+                val_loss += loss
+
+                if epoch == epochs:
+                    plot_image(batch[0], batch[1], pred, 'val', 0)
+
+        print(f'Validation loss : {val_loss:.4f}')
+        logger.info(f'Validation loss : {val_loss}')
+        writer.add_scalar("Validation Loss", val_loss, epoch)
 
     torch.cuda.empty_cache()
     writer.flush()
