@@ -158,7 +158,7 @@ def get_param_arguments():
                         help='Percent of validation set')
     parser.add_argument('--n_channels', '-n_chan', metavar='NCHANNEL', type=int, default=1,
                         help='Number of channels in the image')
-    parser.add_argument('--n_classes', '-n_class', metavar='NCLASS', type=int, default=3,
+    parser.add_argument('--n_classes', '-n_class', metavar='NCLASS', type=int, default=2,
                         help='Number of output classes')
     parser.add_argument('--load_cp', '-l_cp', metavar='LOADCHECKPOINT', type=bool, default=False,
                         help='Load model from check point ')
