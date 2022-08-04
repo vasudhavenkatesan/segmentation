@@ -42,6 +42,8 @@ def plot_image(image, gt, pred, type='val', i=0):
 
 def print_tensor_values(gt, pred):
     a = torch.unsqueeze(gt[-1, 12, :, :], 0)
-    b = torch.unsqueeze(pred[-1, 12, :, :])
+    predic = torch.from_numpy(pred.detach().cpu().numpy())
+    b = torch.unsqueeze(predic[12, :, :], 0)
+
     torch.set_printoptions(threshold=10_000)
     print(a - b)
