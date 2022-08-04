@@ -36,3 +36,11 @@ def plot_image(image, gt, pred, type='val', i=0):
     plt.title('Predicted Mask')
     plt.imshow(pred_for_plot[12, :, :], cmap='gray')
     plt.savefig(filename)
+    print_tensor_values(gt, pred)
+
+
+def print_tensor_values(gt, pred):
+    a = torch.unsqueeze(gt[-1, 12, :, :], 0)
+    b = torch.unsqueeze(pred[-1, 12, :, :])
+    torch.set_printoptions(threshold=10_000)
+    print(a - b)
