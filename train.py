@@ -46,7 +46,8 @@ def training_fn(net,
     val_dataloader = DataLoader(val_set, shuffle=False, batch_size=batch_size, num_workers=1, pin_memory=True)
 
     # criterion = DiceLoss(ignore_index=[2], reduction='mean')
-    class_weights = dataset.compute_class_weights(dataset)
+    # class_weights = dataset.compute_class_weights(dataset)
+    class_weights = [1.0, 1000.0]
     c_weights = torch.tensor(class_weights, dtype=torch.float)
     c_weights = c_weights.to(device=device, dtype=torch.float32)
 
@@ -84,55 +85,55 @@ def training_fn(net,
 
             optimizer.zero_grad()
 
-            pred = net(image)
-            # pred = pred[:, -1, :, :]
-            loss = criterion(pred, true_mask)
-            i += 1
-            # Backpropagation
-            loss.backward()
-            optimizer.step()
-            # scheduler.step()
-
-            running_loss += loss.item()
-
-            if epoch == epochs:
-                plot_image(batch[0], batch[1], pred, 'train', i)
-
-        print(f'Epoch : {epoch}, running loss : {running_loss}, loss: {(running_loss / i):.4f}')
-        logger.info(f'Epoch : {epoch}, running loss : {running_loss}, loss: {(running_loss / i)}')
-        writer.add_scalar("Loss/train", (running_loss / i), epoch)
-
-        if i == 1:
-            break;
-        # validation
-        logger.info('Validation step')
-        net.eval()
-
-        for batch in val_dataloader:
-            image = batch[0]
-            image = image.permute(1, 0, 2, 3)
-            mask = batch[1]
-            image = image.to(device=device, dtype=torch.float32)
-            true_mask = mask.to(device=device, dtype=torch.int64)
-
-            true_mask = one_hot_encoding(true_mask, config.n_classes)
-            true_mask = true_mask.type(torch.long)
-
-            val_loss = 0
-            with torch.no_grad():
-                # predict the mask
-                pred = net(image)
-                # pred = pred[:, -1, :, :]
-                loss = criterion(pred, true_mask)
-
-                val_loss += loss
-
-                if epoch == epochs:
-                    plot_image(batch[0], batch[1], pred, 'val', 0)
-
-        print(f'Validation loss : {val_loss:.4f}')
-        logger.info(f'Validation loss : {val_loss}')
-        writer.add_scalar("Validation Loss", val_loss, epoch)
+        #     pred = net(image)
+        #     # pred = pred[:, -1, :, :]
+        #     loss = criterion(pred, true_mask)
+        #     i += 1
+        #     # Backpropagation
+        #     loss.backward()
+        #     optimizer.step()
+        #     # scheduler.step()
+        #
+        #     running_loss += loss.item()
+        #
+        #     if epoch == epochs:
+        #         plot_image(batch[0], batch[1], pred, 'train', i)
+        #
+        # print(f'Epoch : {epoch}, running loss : {running_loss}, loss: {(running_loss / i):.4f}')
+        # logger.info(f'Epoch : {epoch}, running loss : {running_loss}, loss: {(running_loss / i)}')
+        # writer.add_scalar("Loss/train", (running_loss / i), epoch)
+        #
+        # if i == 1:
+        #     break;
+        # # validation
+        # logger.info('Validation step')
+        # net.eval()
+        #
+        # for batch in val_dataloader:
+        #     image = batch[0]
+        #     image = image.permute(1, 0, 2, 3)
+        #     mask = batch[1]
+        #     image = image.to(device=device, dtype=torch.float32)
+        #     true_mask = mask.to(device=device, dtype=torch.int64)
+        #
+        #     true_mask = one_hot_encoding(true_mask, config.n_classes)
+        #     true_mask = true_mask.type(torch.long)
+        #
+        #     val_loss = 0
+        #     with torch.no_grad():
+        #         # predict the mask
+        #         pred = net(image)
+        #         # pred = pred[:, -1, :, :]
+        #         loss = criterion(pred, true_mask)
+        #
+        #         val_loss += loss
+        #
+        #         if epoch == epochs:
+        #             plot_image(batch[0], batch[1], pred, 'val', 0)
+        #
+        # print(f'Validation loss : {val_loss:.4f}')
+        # logger.info(f'Validation loss : {val_loss}')
+        # writer.add_scalar("Validation Loss", val_loss, epoch)
 
     torch.cuda.empty_cache()
     writer.flush()
