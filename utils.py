@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import torch
 import config
 import numpy as np
+from sklearn import preprocessing
 
 logger = config.get_logger()
 
@@ -26,22 +27,25 @@ def plot_image(image, gt, pred, type='val', i=0):
     plt.imshow(image[-1, 12, :, :], cmap='gray')
     plt.subplot(1, 3, 2)
     plt.title(f'GT')
-    gt[gt == 2] = 0.5
+    # normalise gt and prediction for a grayscale image
+    gt = normalise_values(gt)
     plt.imshow(gt[-1, 12, :, :], cmap='gray')
-    predic = torch.from_numpy(pred.detach().cpu().numpy())
-    pred_for_plot = predic.argmax(dim=1)
-    pred_for_plot[pred_for_plot == 2] = 0.5
+    pred = (torch.from_numpy(pred.detach().cpu().numpy())).argmax(dim=1)
+    pred = normalise_values(pred)
     plt.subplot(1, 3, 3)
     plt.title('Predicted Mask')
-    plt.imshow(pred_for_plot[12, :, :], cmap='gray')
+    plt.imshow(pred[12, :, :], cmap='gray')
     plt.savefig(filename)
     print_tensor_values(gt, pred)
+
+
+def normalise_values(unnormalised_input):
+    min_max_scaler = preprocessing.MinMaxScaler()
+    return min_max_scaler.fit_transform(unnormalised_input)
 
 
 def print_tensor_values(gt, pred):
     a = torch.unsqueeze(gt[-1, 12, :, :], 0)
     predic = torch.from_numpy(pred.detach().cpu().numpy())
     b = torch.unsqueeze(predic[12, :, :], 0)
-
-    torch.set_printoptions(threshold=10_000)
     print(a - b)
