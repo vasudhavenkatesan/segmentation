@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 import torch
 import config
 import numpy as np
-from sklearn import preprocessing
 
 logger = config.get_logger()
 
@@ -40,8 +39,8 @@ def plot_image(image, gt, pred, type='val', i=0):
 
 
 def normalise_values(unnormalised_input):
-    min_max_scaler = preprocessing.MinMaxScaler()
-    return min_max_scaler.fit_transform(unnormalised_input)
+    np_input = torch.from_numpy(unnormalised_input)
+    return (np_input - np.min(np_input)) / (np.max(np_input) - np.min(np_input))
 
 
 def print_tensor_values(gt, pred):
