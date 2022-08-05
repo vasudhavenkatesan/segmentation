@@ -1,9 +1,11 @@
 import torch.nn.functional as F
 from datetime import datetime
 import matplotlib.pyplot as plt
-import torch
 import config
+import sys
 import numpy as np
+
+np.set_printoptions(threshold=sys.maxsize)
 
 logger = config.get_logger()
 
@@ -29,8 +31,8 @@ def plot_image(image, gt, pred, type='val', i=0):
     # normalise gt and prediction for a grayscale image
     gt = normalise_values(gt)
     plt.imshow(gt[-1, 12, :, :], cmap='gray')
-    pred = (torch.from_numpy(pred.detach().cpu().numpy())).argmax(dim=1)
     pred = normalise_values(pred)
+    pred = pred.argmax(axis=1)
     plt.subplot(1, 3, 3)
     plt.title('Predicted Mask')
     plt.imshow(pred[12, :, :], cmap='gray')
@@ -39,12 +41,11 @@ def plot_image(image, gt, pred, type='val', i=0):
 
 
 def normalise_values(unnormalised_input):
-    np_input = torch.from_numpy(unnormalised_input)
-    return (np_input - np.min(np_input)) / (np.max(np_input) - np.min(np_input))
+    np_input = unnormalised_input.cpu().detach().numpy()
+    return np_input / 2
 
 
 def print_tensor_values(gt, pred):
-    a = torch.unsqueeze(gt[-1, 12, :, :], 0)
-    predic = torch.from_numpy(pred.detach().cpu().numpy())
-    b = torch.unsqueeze(predic[12, :, :], 0)
-    print(a - b)
+    a = np.ravel(gt[-1, 12, :, :])
+    b = np.ravel(pred[12, :, :])
+    print(f'Size : {a.size} , Difference : {np.count_nonzero(a - b)}')

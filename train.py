@@ -11,7 +11,7 @@ from unet.unet import UNET
 from dataset import hdf5
 from utils import one_hot_encoding, plot_image
 import config
-from eval.DiceLoss import DiceLoss
+from eval.evaluate import mIoU
 
 # Logger
 logger = config.get_logger()
@@ -98,6 +98,7 @@ def training_fn(net,
 
             if epoch == epochs:
                 plot_image(batch[0], batch[1], pred, 'train', i)
+                print(f'mIoU -  {mIoU(pred, true_mask)}')
 
         print(f'Epoch : {epoch}, running loss : {running_loss}, loss: {(running_loss / i):.4f}')
         logger.info(f'Epoch : {epoch}, running loss : {running_loss}, loss: {(running_loss / i)}')

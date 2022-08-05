@@ -3,36 +3,36 @@ import numpy as np
 import os
 import torch
 from sklearn.metrics import confusion_matrix
-from sklearn.metrics import accuracy_score, hamming_loss, multilabel_confusion_matrix
+from sklearn.metrics import accuracy_score, hamming_loss
 import matplotlib.pyplot as plt
 from dataset import hdf5
 
 
 def mIoU(y_pred, y_true):
-    y_pred = y_pred.data.cpu().numpy()
+    y_pred = (y_pred.data.cpu().numpy()).argmax(axis=1)
     y_true = y_true.cpu().numpy()
     y_pred = y_pred.flatten()
     y_true = y_true.flatten()
     # Accuracy Score
     val = accuracy_score(y_true, y_pred, normalize=True, sample_weight=None)
-    ((y_pred == y_true).all(axis=1).sum() / y_pred.shape[0])
-
+    ((y_pred == y_true).all(axis=0).sum() / y_pred.shape[0])
+    print(f'Accuract score - {val}')
     # Hamming Loss
     hamming_loss(y_true, y_pred)
-    scores = (y_pred != y_true).sum(axis=1)
+    scores = (y_pred != y_true).sum(axis=0)
     numerator = scores.sum()
-    denominator = ((scores != 0).sum() * y_true.shape[1])
+    denominator = ((scores != 0).sum() * y_true.shape[0])
     hl = (numerator / denominator)
-
-    current = multilabel_confusion_matrix(y_true, y_pred.round(), labels=[0, 1, 2])
+    print(f'Hamming loss - {hl}')
+    current = confusion_matrix(y_true, y_pred, labels=[0, 1, 2])
     intersection = np.diag(current)
     ground_truth_set = current.sum(axis=1)
     predicted_set = current.sum(axis=0)
     union = ground_truth_set + predicted_set - intersection
-    IoU = intersection / union.astype(np.float32)
-    # return np.mean(IoU)
+    IoU = np.divide(intersection, union.astype(np.float32), where=union != 0)
+    return np.mean(IoU)
 
-    return val, hl, np.mean(IoU)
+    # return val, hl, np.mean(IoU)
 
 
 def visualise(img, mask):
