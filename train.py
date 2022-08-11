@@ -125,11 +125,11 @@ def training_fn(net,
                 # pred = pred[:, -1, :, :]
                 loss = criterion(pred, true_mask)
 
-                val_loss += loss
+                val_loss += loss.mean()
 
                 if epoch == (epochs - 1):
                     plot_image(batch[0], batch[1], pred, 'val', 0)
-                    plot_3d_image(batch[0], batch[1], pred, epoch, writer)
+                    plot_3d_image(batch[0], batch[1], pred, loss, epoch, writer)
 
         print(f'Validation loss : {val_loss:.4f}')
         logger.info(f'Validation loss : {val_loss}')
