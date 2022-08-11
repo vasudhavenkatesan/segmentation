@@ -35,8 +35,8 @@ class RandomCrop3D:
         self.crop_sz = tuple(crop_sz)
 
     def __call__(self, image, mask):
-        # slice_dhw = [self._get_slice(i, k) for i, k in zip(self.img_sz, self.crop_sz)]
-        slice_dhw = [[0, 16], [0, 256], [0, 256]]
+        slice_dhw = [self._get_slice(i, k) for i, k in zip(self.img_sz, self.crop_sz)]
+        # slice_dhw = [[0, 16], [0, 256], [0, 256]]
         img = self._crop(image, *slice_dhw)
         msk = self._crop(mask, *slice_dhw)
         return img, msk

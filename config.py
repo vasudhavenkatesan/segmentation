@@ -11,7 +11,7 @@ image_dim = (16, 256, 256)
 
 n_channels = 1
 
-n_classes = 2
+n_classes = 3
 
 ignore_label = [2]
 

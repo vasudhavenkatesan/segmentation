@@ -1,7 +1,5 @@
 import numpy as np
 
-import os
-import torch
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import accuracy_score, hamming_loss
 import matplotlib.pyplot as plt

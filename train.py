@@ -52,7 +52,7 @@ def training_fn(net,
     c_weights = c_weights.to(device=device, dtype=torch.float32)
 
     # specify loss functions, optimizers
-    criterion = nn.CrossEntropyLoss(weight=c_weights, ignore_index=255)
+    criterion = nn.CrossEntropyLoss(weight=c_weights, ignore_index=2)
     optimizer = Adam(net.parameters(), lr=learning_rate)
     # scheduler = MultiStepLR(optimizer, milestones=[50, 100, 150], gamma=0.1)
 
