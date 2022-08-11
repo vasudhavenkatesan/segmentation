@@ -11,7 +11,7 @@ from unet.unet import UNET
 from dataset import hdf5
 from utils import one_hot_encoding, plot_image
 import config
-from eval.evaluate import mIoU
+import tqdm
 
 # Logger
 logger = config.get_logger()
@@ -30,7 +30,7 @@ def training_fn(net,
                 batch_size: int = 1,
                 learning_rate: float = 1e-3,
                 valiation_percent=0.1,
-                save_checkpoint: bool = True,
+                save_checkpoint: bool = False,
                 load_checkpoint: bool = False):
     # create dataset
     dataset = hdf5.Hdf5Dataset(data_file_path, image_dim=input_dim, contains_mask=True)
@@ -47,12 +47,12 @@ def training_fn(net,
 
     # criterion = DiceLoss(ignore_index=[2], reduction='mean')
     # class_weights = dataset.compute_class_weights(dataset)
-    class_weights = [1.0, 1000.0]
+    class_weights = [1.0, 1.0]
     c_weights = torch.tensor(class_weights, dtype=torch.float)
     c_weights = c_weights.to(device=device, dtype=torch.float32)
 
     # specify loss functions, optimizers
-    criterion = nn.CrossEntropyLoss(weight=c_weights)
+    criterion = nn.CrossEntropyLoss(weight=c_weights, ignore_index=255)
     optimizer = Adam(net.parameters(), lr=learning_rate)
     # scheduler = MultiStepLR(optimizer, milestones=[50, 100, 150], gamma=0.1)
 
@@ -62,10 +62,10 @@ def training_fn(net,
             checkpoint = torch.load(checkpoint_path)
             net.load_state_dict(checkpoint)
 
-    for epoch in range(1, epochs + 1):
-        logger.info('Epoch {}/{}'.format(epoch, epochs))
+    for epoch in tqdm.tqdm(range(epochs)):
+        logger.info('Epoch {}/{}'.format(epoch + 1, epochs))
         logger.info('-' * 15)
-        print('Epoch {}/{}'.format(epoch, epochs))
+        print('Epoch {}/{}'.format(epoch + 1, epochs))
         print('-' * 10)
 
         net.to(device)
@@ -98,18 +98,16 @@ def training_fn(net,
 
             if epoch == epochs:
                 plot_image(batch[0], batch[1], pred, 'train', i)
-                print(f'mIoU -  {mIoU(pred, true_mask)}')
 
         print(f'Epoch : {epoch}, running loss : {running_loss}, loss: {(running_loss / i):.4f}')
         logger.info(f'Epoch : {epoch}, running loss : {running_loss}, loss: {(running_loss / i)}')
         writer.add_scalar("Loss/train", (running_loss / i), epoch)
 
-        if i == 1:
-            break;
         # validation
         logger.info('Validation step')
         net.eval()
 
+        val_loss = 0
         for batch in val_dataloader:
             image = batch[0]
             image = image.permute(1, 0, 2, 3)
@@ -120,7 +118,6 @@ def training_fn(net,
             true_mask = one_hot_encoding(true_mask, config.n_classes)
             true_mask = true_mask.type(torch.long)
 
-            val_loss = 0
             with torch.no_grad():
                 # predict the mask
                 pred = net(image)

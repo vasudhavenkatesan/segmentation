@@ -65,7 +65,7 @@ class Hdf5Dataset(Dataset):
                 subgroup = group['0']
                 label = torch.from_numpy(np.array(subgroup['VoxelData']).astype(np.float32))
                 # replace mask label of 255 with 2
-                label[label == 255] = 0
+                # label[label == 255] = 0
         logging.info(f'Loaded image {id} - {file}')
         return image, label
 
