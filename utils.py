@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import config
 import sys
 import numpy as np
+from monai.visualize import plot_2d_or_3d_image
 
 np.set_printoptions(threshold=sys.maxsize)
 
@@ -37,15 +38,21 @@ def plot_image(image, gt, pred, type='val', i=0):
     plt.title('Predicted Mask')
     plt.imshow(pred[12, :, :], cmap='gray')
     plt.savefig(filename)
-    print_tensor_values(gt, pred)
 
+
+def plot_3d_image(image, gt, pred, loss, step, writer):
+    plot_2d_or_3d_image(data=image, step=step, writer=writer, frame_dim=-1, tag='Image')
+    plot_2d_or_3d_image(data=gt, step=step, writer=writer, frame_dim=-1, tag='GT')
+    plot_2d_or_3d_image(data=pred, step=step, writer=writer, frame_dim=-1, tag='Prediction')
+    plot_2d_or_3d_image(data=loss, step=step, writer=writer, frame_dim=-1, tag='Loss')
+
+
+# import napari
+# viewer = napari.Viewer()
+# viewer.add_image(image, name='image')
+# viewer.add_image(gt, name='gt')
+# viewer.add_image(pred, name='prediction')
 
 def normalise_values(unnormalised_input):
     np_input = unnormalised_input.cpu().detach().numpy()
     return np_input / 2
-
-
-def print_tensor_values(gt, pred):
-    a = np.ravel(gt[-1, 12, :, :])
-    b = np.ravel(pred[12, :, :])
-    print(f'Size : {a.size} , Difference : {np.count_nonzero(a - b)}')

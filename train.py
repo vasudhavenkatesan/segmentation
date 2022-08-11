@@ -9,7 +9,7 @@ from torch.optim.lr_scheduler import MultiStepLR
 from torch.utils.tensorboard import SummaryWriter
 from unet.unet import UNET
 from dataset import hdf5
-from utils import one_hot_encoding, plot_image
+from utils import one_hot_encoding, plot_image, plot_3d_image
 import config
 import tqdm
 
@@ -52,7 +52,7 @@ def training_fn(net,
     c_weights = c_weights.to(device=device, dtype=torch.float32)
 
     # specify loss functions, optimizers
-    criterion = nn.CrossEntropyLoss(weight=c_weights, ignore_index=2)
+    criterion = nn.CrossEntropyLoss(ignore_index=2, reduction='none')
     optimizer = Adam(net.parameters(), lr=learning_rate)
     # scheduler = MultiStepLR(optimizer, milestones=[50, 100, 150], gamma=0.1)
 
@@ -90,14 +90,15 @@ def training_fn(net,
             loss = criterion(pred, true_mask)
             i += 1
             # Backpropagation
-            loss.backward()
+            loss.mean().backward()
             optimizer.step()
             # scheduler.step()
 
-            running_loss += loss.item()
+            running_loss += loss.mean()
 
-            if epoch == epochs:
+            if epoch == (epochs - 1):
                 plot_image(batch[0], batch[1], pred, 'train', i)
+                plot_3d_image(batch[0], batch[1], pred, loss, epoch, writer)
 
         print(f'Epoch : {epoch}, running loss : {running_loss}, loss: {(running_loss / i):.4f}')
         logger.info(f'Epoch : {epoch}, running loss : {running_loss}, loss: {(running_loss / i)}')
@@ -126,8 +127,9 @@ def training_fn(net,
 
                 val_loss += loss
 
-                if epoch == epochs:
+                if epoch == (epochs - 1):
                     plot_image(batch[0], batch[1], pred, 'val', 0)
+                    plot_3d_image(batch[0], batch[1], pred, epoch, writer)
 
         print(f'Validation loss : {val_loss:.4f}')
         logger.info(f'Validation loss : {val_loss}')
