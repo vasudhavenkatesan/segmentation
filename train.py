@@ -98,7 +98,7 @@ def training_fn(net,
 
             if epoch == (epochs - 1):
                 plot_image(batch[0], batch[1], pred, 'train', i)
-                plot_3d_image(batch[0], batch[1], pred, loss, epoch, writer)
+                plot_3d_image(batch[0], batch[1], pred, loss, epoch, i, writer)
 
         print(f'Epoch : {epoch}, running loss : {running_loss}, loss: {(running_loss / i):.4f}')
         logger.info(f'Epoch : {epoch}, running loss : {running_loss}, loss: {(running_loss / i)}')
@@ -129,7 +129,7 @@ def training_fn(net,
 
                 if epoch == (epochs - 1):
                     plot_image(batch[0], batch[1], pred, 'val', 0)
-                    plot_3d_image(batch[0], batch[1], pred, loss, epoch, writer)
+                    plot_3d_image(batch[0], batch[1], pred, loss, epoch, 0, writer)
 
         print(f'Validation loss : {val_loss:.4f}')
         logger.info(f'Validation loss : {val_loss}')

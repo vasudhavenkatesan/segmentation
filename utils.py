@@ -40,11 +40,11 @@ def plot_image(image, gt, pred, type='val', i=0):
     plt.savefig(filename)
 
 
-def plot_3d_image(image, gt, pred, loss, step, writer):
-    plot_2d_or_3d_image(data=image, step=step, writer=writer, frame_dim=-1, tag='Image')
-    plot_2d_or_3d_image(data=gt, step=step, writer=writer, frame_dim=-1, tag='GT')
-    plot_2d_or_3d_image(data=pred, step=step, writer=writer, frame_dim=-1, tag='Prediction')
-    plot_2d_or_3d_image(data=loss, step=step, writer=writer, frame_dim=-1, tag='Loss')
+def plot_3d_image(image, gt, pred, loss, step, i, writer):
+    plot_2d_or_3d_image(data=image, step=step, writer=writer, frame_dim=-1, tag=f'Image_{i}')
+    plot_2d_or_3d_image(data=gt, step=step, writer=writer, frame_dim=-1, tag=f'GT_{i}')
+    plot_2d_or_3d_image(data=pred, step=step, writer=writer, frame_dim=-1, tag=f'Prediction_{i}')
+    plot_2d_or_3d_image(data=loss, step=step, writer=writer, frame_dim=-1, tag=f'Loss_{i}')
 
 
 # import napari
