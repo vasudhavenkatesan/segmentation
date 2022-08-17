@@ -109,9 +109,10 @@ def training_fn(net,
         for batch in val_dataloader:
             image = batch[0]
             image = image.permute(1, 0, 2, 3)
-            mask = batch[1]
+            true_mask = batch[1]
+            true_mask = true_mask[-1, :]
             image = image.to(device=device, dtype=torch.float32)
-            true_mask = mask.to(device=device, dtype=torch.long)
+            true_mask = true_mask.to(device=device, dtype=torch.long)
 
             with torch.no_grad():
                 # predict the mask
