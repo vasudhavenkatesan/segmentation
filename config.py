@@ -11,11 +11,11 @@ image_dim = (16, 256, 256)
 
 n_channels = 1
 
-n_classes = 3
+n_classes = 2
 
 ignore_label = [2]
 
-checkpoint_dir = os.path.join("checkpoints", "Model1.pth")
+checkpoint_dir = os.path.join("checkpoints", "best_model.pth")
 
 
 def get_logger():

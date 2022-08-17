@@ -9,7 +9,7 @@ from torch.optim.lr_scheduler import MultiStepLR
 from torch.utils.tensorboard import SummaryWriter
 from unet.unet import UNET
 from dataset import hdf5
-from utils import one_hot_encoding, plot_image, plot_3d_image
+from utils import plot_image, plot_3d_image
 import config
 import tqdm
 
@@ -30,8 +30,7 @@ def training_fn(net,
                 batch_size: int = 1,
                 learning_rate: float = 1e-3,
                 valiation_percent=0.1,
-                save_checkpoint: bool = False,
-                load_checkpoint: bool = False):
+                load_checkpoint: bool = True):
     # create dataset
     dataset = hdf5.Hdf5Dataset(data_file_path, image_dim=input_dim, contains_mask=True)
 
@@ -46,13 +45,9 @@ def training_fn(net,
     val_dataloader = DataLoader(val_set, shuffle=False, batch_size=batch_size, num_workers=1, pin_memory=True)
 
     # criterion = DiceLoss(ignore_index=[2], reduction='mean')
-    # class_weights = dataset.compute_class_weights(dataset)
-    class_weights = [1.0, 1.0]
-    c_weights = torch.tensor(class_weights, dtype=torch.float)
-    c_weights = c_weights.to(device=device, dtype=torch.float32)
 
     # specify loss functions, optimizers
-    criterion = nn.CrossEntropyLoss(ignore_index=2, reduction='none')
+    criterion = nn.CrossEntropyLoss(ignore_index=255, reduction='none')
     optimizer = Adam(net.parameters(), lr=learning_rate)
     # scheduler = MultiStepLR(optimizer, milestones=[50, 100, 150], gamma=0.1)
 
@@ -62,6 +57,10 @@ def training_fn(net,
             checkpoint = torch.load(checkpoint_path)
             net.load_state_dict(checkpoint)
 
+    running_loss = 0
+    val_loss = 0
+    best_validation_loss = 0
+
     for epoch in tqdm.tqdm(range(epochs)):
         logger.info('Epoch {}/{}'.format(epoch + 1, epochs))
         logger.info('-' * 15)
@@ -70,18 +69,16 @@ def training_fn(net,
 
         net.to(device)
         net.train()
-        running_loss = 0
+
         i = 0
         # training
         for batch in train_dataloader:
             image = batch[0]
             image = image.permute(1, 0, 2, 3)
             true_mask = batch[1]
-
+            true_mask = true_mask[-1, :]
             image = image.to(device=device, dtype=torch.float32)
-            true_mask = true_mask.to(device=device, dtype=torch.int64)
-            true_mask = one_hot_encoding(true_mask, config.n_classes)
-            true_mask = true_mask.type(torch.long)
+            true_mask = true_mask.to(device=device, dtype=torch.long)
 
             optimizer.zero_grad()
 
@@ -98,7 +95,8 @@ def training_fn(net,
 
             if epoch == (epochs - 1):
                 plot_image(batch[0], batch[1], pred, 'train', i)
-                plot_3d_image(batch[0], batch[1], pred, loss, epoch, i, writer)
+
+            plot_3d_image(batch[0], batch[1], pred, loss, step=epoch, writer=writer)
 
         print(f'Epoch : {epoch}, running loss : {running_loss}, loss: {(running_loss / i):.4f}')
         logger.info(f'Epoch : {epoch}, running loss : {running_loss}, loss: {(running_loss / i)}')
@@ -108,16 +106,12 @@ def training_fn(net,
         logger.info('Validation step')
         net.eval()
 
-        val_loss = 0
         for batch in val_dataloader:
             image = batch[0]
             image = image.permute(1, 0, 2, 3)
             mask = batch[1]
             image = image.to(device=device, dtype=torch.float32)
-            true_mask = mask.to(device=device, dtype=torch.int64)
-
-            true_mask = one_hot_encoding(true_mask, config.n_classes)
-            true_mask = true_mask.type(torch.long)
+            true_mask = mask.to(device=device, dtype=torch.long)
 
             with torch.no_grad():
                 # predict the mask
@@ -129,7 +123,8 @@ def training_fn(net,
 
                 if epoch == (epochs - 1):
                     plot_image(batch[0], batch[1], pred, 'val', 0)
-                    plot_3d_image(batch[0], batch[1], pred, loss, epoch, 0, writer)
+
+            plot_3d_image(batch[0], batch[1], pred, loss, step=epoch, writer=writer)
 
         print(f'Validation loss : {val_loss:.4f}')
         logger.info(f'Validation loss : {val_loss}')
@@ -139,12 +134,13 @@ def training_fn(net,
     writer.flush()
 
     # save checkpoint
-    if save_checkpoint:
+    if best_validation_loss < val_loss:
         if os.path.exists(checkpoint_path):  # checking if there is a file with this name
             os.remove(checkpoint_path)  # deleting the file
         checkpoint = net.state_dict()
         torch.save(checkpoint, checkpoint_path)
-        logger.info(f'Checkpoint {epoch} saved!')
+        logger.info(f'Best checkpoint at epoch - {epoch} saved!')
+        logger.info(f'Best validation loss - {best_validation_loss}')
     writer.close()
 
 

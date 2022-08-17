@@ -4,18 +4,12 @@ import matplotlib.pyplot as plt
 import config
 import sys
 import numpy as np
+import torch
 from monai.visualize import plot_2d_or_3d_image
 
 np.set_printoptions(threshold=sys.maxsize)
 
 logger = config.get_logger()
-
-
-def one_hot_encoding(input, n_classes):
-    target = F.one_hot(input, n_classes)
-    target = target.permute(0, 1, 4, 2, 3)
-    target = target[-1, :, -1, :, :]
-    return target
 
 
 def plot_image(image, gt, pred, type='val', i=0):
@@ -40,11 +34,12 @@ def plot_image(image, gt, pred, type='val', i=0):
     plt.savefig(filename)
 
 
-def plot_3d_image(image, gt, pred, loss, step, i, writer):
-    plot_2d_or_3d_image(data=image, step=step, writer=writer, frame_dim=-1, tag=f'Image_{i}')
-    plot_2d_or_3d_image(data=gt, step=step, writer=writer, frame_dim=-1, tag=f'GT_{i}')
-    plot_2d_or_3d_image(data=pred, step=step, writer=writer, frame_dim=-1, tag=f'Prediction_{i}')
-    plot_2d_or_3d_image(data=loss, step=step, writer=writer, frame_dim=-1, tag=f'Loss_{i}')
+def plot_3d_image(image, gt, pred, loss, step, writer):
+    plot_2d_or_3d_image(data=image, step=step, writer=writer, frame_dim=-1, tag='Image')
+    plot_2d_or_3d_image(data=gt, step=step, writer=writer, frame_dim=-1, tag='GT')
+    pred_for_label_1 = torch.sigmoid(pred[:, 1, :])
+    plot_2d_or_3d_image(data=pred_for_label_1, step=step, writer=writer, frame_dim=-1, tag=f'Prediction')
+    plot_2d_or_3d_image(data=loss, step=step, writer=writer, frame_dim=-1, tag='Loss')
 
 
 # import napari
