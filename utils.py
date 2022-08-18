@@ -26,11 +26,11 @@ def plot_image(image, gt, pred, type='val', i=0):
     # normalise gt and prediction for a grayscale image
     gt = normalise_values(gt)
     plt.imshow(gt[-1, 12, :, :], cmap='gray')
-    pred = normalise_values(pred)
+    pred = normalise_values(pred.detach().cpu())
     pred = pred.argmax(axis=1)
     plt.subplot(1, 3, 3)
     plt.title('Predicted Mask')
-    plt.imshow(pred[12, :, :], cmap='gray')
+    plt.imshow(pred[-1, 12, :, :], cmap='gray')
     plt.savefig(filename)
 
 

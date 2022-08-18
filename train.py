@@ -5,7 +5,6 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, random_split
 from torch.optim import Adam
-from torch.optim.lr_scheduler import MultiStepLR
 from torch.utils.tensorboard import SummaryWriter
 from unet.unet import UNET
 from dataset import hdf5
@@ -59,7 +58,7 @@ def training_fn(net,
 
     running_loss = 0
     val_loss = 0
-    best_validation_loss = 0
+    best_validation_loss = 10.0
 
     for epoch in tqdm.tqdm(range(epochs)):
         logger.info('Epoch {}/{}'.format(epoch + 1, epochs))
@@ -73,18 +72,14 @@ def training_fn(net,
         i = 0
         # training
         for batch in train_dataloader:
-            image = batch[0]
-            image = image.permute(1, 0, 2, 3)
-            true_mask = batch[1]
-            true_mask = true_mask[-1, :]
+            image = torch.unsqueeze(batch[0], dim=0)
             image = image.to(device=device, dtype=torch.float32)
-            true_mask = true_mask.to(device=device, dtype=torch.long)
+            gt = batch[1].to(device=device, dtype=torch.long)
 
             optimizer.zero_grad()
 
             pred = net(image)
-            # pred = pred[:, -1, :, :]
-            loss = criterion(pred, true_mask)
+            loss = criterion(pred, gt)
             i += 1
             # Backpropagation
             loss.mean().backward()
@@ -107,18 +102,15 @@ def training_fn(net,
         net.eval()
 
         for batch in val_dataloader:
-            image = batch[0]
-            image = image.permute(1, 0, 2, 3)
-            true_mask = batch[1]
-            true_mask = true_mask[-1, :]
+            image = torch.unsqueeze(batch[0], dim=0)
             image = image.to(device=device, dtype=torch.float32)
-            true_mask = true_mask.to(device=device, dtype=torch.long)
+            gt = batch[1].to(device=device, dtype=torch.long)
 
             with torch.no_grad():
                 # predict the mask
                 pred = net(image)
                 # pred = pred[:, -1, :, :]
-                loss = criterion(pred, true_mask)
+                loss = criterion(pred, gt)
 
                 val_loss += loss.mean()
 
