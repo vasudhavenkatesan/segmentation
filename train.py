@@ -70,8 +70,10 @@ def training_fn(net,
         net.train()
 
         i = 0
+        running_loss = 0.0
         # training
         for batch in train_dataloader:
+
             image = torch.unsqueeze(batch[0], dim=0)
             image = image.to(device=device, dtype=torch.float32)
             gt = batch[1].to(device=device, dtype=torch.long)
@@ -93,9 +95,9 @@ def training_fn(net,
 
             plot_3d_image(batch[0], batch[1], pred, loss, step=epoch, writer=writer)
 
+        writer.add_scalar("Loss/train", (running_loss / i), epoch)
         print(f'Epoch : {epoch}, running loss : {running_loss}, loss: {(running_loss / i):.4f}')
         logger.info(f'Epoch : {epoch}, running loss : {running_loss}, loss: {(running_loss / i)}')
-        writer.add_scalar("Loss/train", (running_loss / i), epoch)
 
         # validation
         logger.info('Validation step')
@@ -109,7 +111,6 @@ def training_fn(net,
             with torch.no_grad():
                 # predict the mask
                 pred = net(image)
-                # pred = pred[:, -1, :, :]
                 loss = criterion(pred, gt)
 
                 val_loss += loss.mean()
