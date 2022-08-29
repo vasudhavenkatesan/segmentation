@@ -56,7 +56,6 @@ def training_fn(net,
             checkpoint = torch.load(checkpoint_path)
             net.load_state_dict(checkpoint)
 
-    running_loss = 0
     val_loss = 0
     best_validation_loss = 10.0
 
@@ -102,7 +101,7 @@ def training_fn(net,
         # validation
         logger.info('Validation step')
         net.eval()
-
+        val_loss = 0.0
         for batch in val_dataloader:
             image = torch.unsqueeze(batch[0], dim=0)
             image = image.to(device=device, dtype=torch.float32)
@@ -128,7 +127,7 @@ def training_fn(net,
     writer.flush()
 
     # save checkpoint
-    if best_validation_loss < val_loss:
+    if val_loss < best_validation_loss:
         if os.path.exists(checkpoint_path):  # checking if there is a file with this name
             os.remove(checkpoint_path)  # deleting the file
         checkpoint = net.state_dict()

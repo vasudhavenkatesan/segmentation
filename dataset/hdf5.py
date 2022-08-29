@@ -1,8 +1,8 @@
 from pathlib import Path
 
 import h5py
-import numpy as np
 import torch
+from torchvision import transforms
 from torch.utils.data import Dataset
 import logging
 
@@ -31,12 +31,16 @@ class Hdf5Dataset(Dataset):
         self.dirpath = filepath
         self.rand_crop = RandomCrop3D((60, 506, 506), image_dim)
 
+        mean, std = self.compute_mean_and_std()
+        self.transform_norm = transforms.Compose([
+            transforms.Normalize(mean=mean, std=std)
+        ])
+
     def __getitem__(self, index):
         # lazy loading of data
         image, label = self.get_image_and_label(self, index)
         image, label = self.rand_crop(image, label)
-        # image = resize_image(config.image_dim, image)
-        # label = resize_image(config.image_dim, label)
+        image = self.transform_norm(image)
         return image, label
 
     def __len__(self):
@@ -69,18 +73,15 @@ class Hdf5Dataset(Dataset):
         logging.info(f'Loaded image {id} - {file}')
         return image, label
 
-    @staticmethod
-    def compute_class_weights(self):
+    def compute_mean_and_std(self):
+        mean = 0.0
+        std = 0.0
         for id_val, i in zip(self.image_id, range(0, len(self.image_id))):
-            _, labels = self.get_image_and_label(self=self, id=id_val)
-            if i == 0:
-                all_labels = labels[0:60, 0:500, 0:500]
-                i += 1
-            else:
-                all_labels = np.concatenate((all_labels, np.array(labels[0:60, 0:500, 0:500])), axis=0)
-        class_weights = compute_class_weight(class_weight='balanced', classes=np.unique(all_labels.ravel()),
-                                             y=(all_labels.ravel()))
-        for i in range(len(class_weights)):
-            if i in config.ignore_label:
-                class_weights[i] = 0.0
-        return class_weights
+            image, _ = self.get_image_and_label(self=self, id=id_val)
+            mean += image.mean()
+            std += image.std()
+
+        mean /= len(self.image_id)
+        std /= len(self.image_id)
+
+        return mean, std
