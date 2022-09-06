@@ -9,6 +9,7 @@ from torch.utils.tensorboard import SummaryWriter
 from unet.unet import UNET
 from dataset import hdf5
 from utils import plot_image, plot_3d_image
+from eval.DiceLoss import dice
 import config
 import tqdm
 
@@ -93,6 +94,8 @@ def training_fn(net,
                 plot_image(batch[0], batch[1], pred, 'train', i)
 
             plot_3d_image(batch[0], batch[1], pred, loss, step=epoch, writer=writer)
+            dice_loss = dice(input=batch[1], target=pred)
+            print(f'Dice loss : {dice}')
 
         writer.add_scalar("Loss/train", (running_loss / i), epoch)
         print(f'Epoch : {epoch}, running loss : {running_loss}, loss: {(running_loss / i):.4f}')
