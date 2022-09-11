@@ -95,7 +95,7 @@ def training_fn(net,
 
             plot_3d_image(batch[0], batch[1], pred, loss, step=epoch, writer=writer)
             dice_loss = dice(input=batch[1], target=pred)
-            print(f'Dice loss : {dice}')
+            print(f'Dice loss : {dice_loss}')
 
         writer.add_scalar("Loss/train", (running_loss / i), epoch)
         print(f'Epoch : {epoch}, running loss : {running_loss}, loss: {(running_loss / i):.4f}')
