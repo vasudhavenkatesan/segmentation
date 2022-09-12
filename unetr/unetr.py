@@ -3,6 +3,7 @@ import torch
 from monai.networks.blocks import UnetrBasicBlock, UnetrPrUpBlock, UnetrUpBlock, UnetOutBlock
 from monai.networks.nets import ViT
 import torch.nn as nn
+from config import device
 
 
 class UNETR(nn.Module):
@@ -85,6 +86,7 @@ class UNETR(nn.Module):
 def test():
     x = torch.randn((1, 1, 80, 512, 512))
     model = UNETR(in_channels=1, out_channels=2, img_size=[80, 512, 512])
+    model.to(device)
     preds = model(x)
     print(preds.argmax(dim=1).shape)
     print(f'Final - {preds.shape}')
