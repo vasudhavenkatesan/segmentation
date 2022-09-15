@@ -5,6 +5,8 @@ import torch.nn as nn
 from torch.utils.data import DataLoader, random_split
 from torch.optim import Adam
 from torch.utils.tensorboard import SummaryWriter
+from torch.cuda.amp import GradScaler
+from torch.cuda.amp import autocast
 from dataset import hdf5
 from utils import plot_image, plot_3d_image
 from eval.DiceLoss import dice
@@ -50,6 +52,7 @@ def training_fn(model,
     optimizer = Adam(model.parameters(), lr=learning_rate)
     # scheduler = MultiStepLR(optimizer, milestones=[50, 100, 150], gamma=0.1)
 
+    scaler = GradScaler()
     if load_checkpoint:
         # load model if it exists
         if os.path.exists(checkpoint_path):
@@ -78,15 +81,16 @@ def training_fn(model,
 
             optimizer.zero_grad()
 
-            pred = model(image)
-            loss = criterion(pred, gt)
+            with autocast():
+                pred = model(image)
+                loss = criterion(pred, gt)
             i += 1
             # Backpropagation
-            loss.mean().backward()
-            optimizer.step()
-            # scheduler.step()
+            scaler.scale(loss.mean()).backward()
+            scaler.step(optimizer)
 
             running_loss += loss.mean()
+            scaler.update()
 
             if epoch == (epochs - 1):
                 plot_image(batch[0], batch[1], pred, 'train', i)
@@ -127,14 +131,14 @@ def training_fn(model,
         torch.cuda.empty_cache()
         writer.flush()
 
-        # save checkpoint
-        if save_checkpoint and val_loss < best_validation_loss:
-            if os.path.exists(checkpoint_path):  # checking if there is a file with this name
-                os.remove(checkpoint_path)  # deleting the file
+    # save checkpoint
+    if save_checkpoint and val_loss < best_validation_loss:
+        if os.path.exists(checkpoint_path):  # checking if there is a file with this name
+            os.remove(checkpoint_path)  # deleting the file
             checkpoint = model.state_dict()
             torch.save(checkpoint, checkpoint_path)
             logger.info(f'Best checkpoint at epoch - {epoch} saved!')
             logger.info(f'Best validation loss - {best_validation_loss}')
-        writer.close()
+    writer.close()
 
     logger.info('Training completed')
