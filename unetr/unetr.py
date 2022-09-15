@@ -84,8 +84,8 @@ class UNETR(nn.Module):
 
 
 def test():
-    x = torch.randn((1, 1, 80, 512, 512))
-    model = UNETR(in_channels=1, out_channels=2, img_size=[80, 512, 512])
+    x = torch.randn((1, 1, 80, 256, 256))
+    model = UNETR(in_channels=1, out_channels=2, img_size=[80, 256, 256])
     model.to(device)
     preds = model(x)
     print(preds.argmax(dim=1).shape)

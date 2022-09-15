@@ -7,7 +7,7 @@ dataset_path = "dataset/data/2_2_2_downsampled/train"
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
-image_dim = (16, 256, 256)
+max_image_dim = [80, 512, 512]
 
 n_channels = 1
 

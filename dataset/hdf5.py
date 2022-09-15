@@ -1,14 +1,16 @@
 from pathlib import Path
 
 import h5py
-import torch
 from torchvision import transforms
 from torch.utils.data import Dataset
-import logging
-
+from config import max_image_dim
 import config
+
 from augmentation.transforms import *
 from sklearn.utils.class_weight import compute_class_weight
+
+# Logger
+logger = config.get_logger()
 
 
 def get_file_list_from_dir(filepath):
@@ -16,20 +18,20 @@ def get_file_list_from_dir(filepath):
     assert (p.is_dir())
     files = list(p.glob('**/*img.h5'))
     if len(files) < 1:
-        logging.debug('Could not find hdf5 datasets')
+        logger.debug('Could not find hdf5 datasets')
         raise RuntimeError('No hdf5 datasets found')
     return files
 
 
 class Hdf5Dataset(Dataset):
-    def __init__(self, filepath, image_dim, contains_mask: bool = True):
-        logging.info('Initialising dataset from HDF5 files')
+    def __init__(self, filepath, reqd_image_dim, contains_mask: bool = True):
+        logger.info('Initialising dataset from HDF5 files')
         self.image_id = {}
         self.contains_mask = contains_mask
         # stores the image and label ids only
         self.get_image_id(self, filepath)
         self.dirpath = filepath
-        self.rand_crop = RandomCrop3D((60, 506, 506), image_dim)
+        self.rand_crop = RandomCrop3D(max_image_dim, reqd_image_dim)
 
         mean, std = self.compute_mean_and_std()
         self.transform_norm = transforms.Compose([
@@ -68,7 +70,7 @@ class Hdf5Dataset(Dataset):
                 group = mask_file['ITKImage']
                 subgroup = group['0']
                 label = torch.from_numpy(np.array(subgroup['VoxelData']).astype(np.float32))
-        logging.info(f'Loaded image {id} - {file}')
+        logger.info(f'Loaded image {id} - {file}')
         return image, label
 
     def compute_mean_and_std(self):

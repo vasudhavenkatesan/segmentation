@@ -30,8 +30,8 @@ def resize_image(reqd_dim, input):
 class RandomCrop3D:
     def __init__(self, img_sz, crop_sz):
         d, h, w = img_sz
-        assert (d, h, w) > crop_sz
-        self.img_sz = tuple((d, h, w))
+        assert [d, h, w] > crop_sz
+        self.img_sz = tuple([d, h, w])
         self.crop_sz = tuple(crop_sz)
 
     def __call__(self, image, mask):
@@ -52,3 +52,10 @@ class RandomCrop3D:
     @staticmethod
     def _crop(x, slice_d, slice_w, slice_h):
         return x[slice_d[0]:slice_d[1], slice_h[0]:slice_h[1], slice_w[0]:slice_w[1]]
+
+
+def test():
+    crop_dim = [64, 256, 256]
+    image_dim = [90, 512, 512]
+    rand_crop = RandomCrop3D(image_dim, crop_dim)
+    print(rand_crop)
