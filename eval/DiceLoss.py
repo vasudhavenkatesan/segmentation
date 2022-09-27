@@ -1,4 +1,5 @@
 import torch
+from config import device
 
 
 def flatten(tensor):
@@ -17,6 +18,7 @@ def flatten(tensor):
 
 
 def dice(input, target, weight=None, epsilon=1e-6):
+    input = input.to(device=device, dtype=torch.long)
     target = torch.sigmoid(target[:, 1, :])
     assert input.size() == target.size(), "'input' and 'target' must have the same shape"
 

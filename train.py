@@ -1,5 +1,5 @@
 import os.path
-
+import pathlib
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, random_split
@@ -95,7 +95,9 @@ def training_fn(model,
             if epoch == (epochs - 1):
                 plot_image(batch[0], batch[1], pred, 'train', i)
 
+            # plot in tensorboard
             plot_3d_image(batch[0], batch[1], pred, loss, step=epoch, writer=writer)
+
             dice_loss = dice(input=batch[1], target=pred)
             print(f'Dice loss : {dice_loss}')
 
@@ -133,12 +135,13 @@ def training_fn(model,
 
     # save checkpoint
     if save_checkpoint and val_loss < best_validation_loss:
-        if os.path.exists(checkpoint_path):  # checking if there is a file with this name
-            os.remove(checkpoint_path)  # deleting the file
-        os.mkdir(os.path.dirname(checkpoint_path))
+        model_name = 'model.pth'
+        model_path = os.path.join(checkpoint_path, model_name)
+        if os.path.exists(model_path):  # checking if there is a file with this name
+            os.remove(model_path)  # deleting the file
         checkpoint = model.state_dict()
-        torch.save(checkpoint, checkpoint_path)
-        logger.info(f'Best checkpoint at epoch - {epoch} saved!')
+        torch.save(checkpoint, model_path)
+        logger.info(f'Best checkpoint at epoch - {epoch} saved')
         logger.info(f'Best validation loss - {best_validation_loss}')
     writer.close()
 

@@ -15,7 +15,7 @@ n_classes = 2
 
 ignore_label = [2]
 
-checkpoint_dir = os.path.join("checkpoints", "best_model.pth")
+checkpoint_dir = os.path.join("checkpoints")
 
 
 def get_logger():

@@ -40,7 +40,7 @@ class Hdf5Dataset(Dataset):
         # lazy loading of data
         image, label = self.get_image_and_label(self, index)
         image, label = self.rand_crop(image, label)
-        image = self.transform_norm(image)
+        # image = self.transform_norm(image)
         return image, label
 
     def __len__(self):
