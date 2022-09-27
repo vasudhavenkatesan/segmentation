@@ -31,7 +31,7 @@ def training_fn(model,
                 learning_rate: float = 1e-3,
                 valiation_percent=0.1,
                 load_checkpoint: bool = True,
-                save_checkpoint: bool = False):
+                save_checkpoint: bool = True):
     # create dataset
     dataset = hdf5.Hdf5Dataset(data_file_path, reqd_image_dim=input_dim, contains_mask=True)
 
@@ -135,10 +135,11 @@ def training_fn(model,
     if save_checkpoint and val_loss < best_validation_loss:
         if os.path.exists(checkpoint_path):  # checking if there is a file with this name
             os.remove(checkpoint_path)  # deleting the file
-            checkpoint = model.state_dict()
-            torch.save(checkpoint, checkpoint_path)
-            logger.info(f'Best checkpoint at epoch - {epoch} saved!')
-            logger.info(f'Best validation loss - {best_validation_loss}')
+        os.mkdir(os.path.dirname(checkpoint_path))
+        checkpoint = model.state_dict()
+        torch.save(checkpoint, checkpoint_path)
+        logger.info(f'Best checkpoint at epoch - {epoch} saved!')
+        logger.info(f'Best validation loss - {best_validation_loss}')
     writer.close()
 
     logger.info('Training completed')

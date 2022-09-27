@@ -33,9 +33,9 @@ def get_param_arguments():
                         help="Number of output classes")
     parser.add_argument("--model_name", default="unetr", type=str,
                         help="model name used for training")
-    parser.add_argument("--image_sizex", default=128, type=int,
+    parser.add_argument("--image_sizex", default=256, type=int,
                         help="size of image in x axis")
-    parser.add_argument("--image_sizey", default=128, type=int,
+    parser.add_argument("--image_sizey", default=256, type=int,
                         help="size of image in y axis")
     parser.add_argument("--image_sizez", default=64, type=int,
                         help="size of image in z axis")
