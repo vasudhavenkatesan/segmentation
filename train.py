@@ -1,5 +1,4 @@
 import os.path
-import pathlib
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, random_split
@@ -10,8 +9,10 @@ from torch.cuda.amp import autocast
 from dataset import hdf5
 from utils import plot_image, plot_3d_image
 from eval.DiceLoss import dice
+from eval.evaluate import save_metrics
 import config
 import tqdm
+from pytorchcheckpoint.checkpoint import CheckpointHandler
 
 # Logger
 logger = config.get_logger()
@@ -26,6 +27,7 @@ writer = SummaryWriter()
 def training_fn(model,
                 device,
                 input_dim,
+                model_name,
                 epochs: int = 1,
                 batch_size: int = 1,
                 learning_rate: float = 1e-3,
@@ -53,6 +55,11 @@ def training_fn(model,
     # scheduler = MultiStepLR(optimizer, milestones=[50, 100, 150], gamma=0.1)
 
     scaler = GradScaler()
+    checkpoint_handler = CheckpointHandler()
+    checkpoint_handler.store_var(var_name="Model type", value=model_name)
+    checkpoint_handler.store_var(var_name="learning_rate", value=learning_rate)
+    checkpoint_handler.store_var(var_name="batch_size", value=batch_size)
+    checkpoint_handler.store_var(var_name="epochs", value=epochs)
     if load_checkpoint:
         # load model if it exists
         if os.path.exists(checkpoint_path):
@@ -72,13 +79,13 @@ def training_fn(model,
 
         i = 0
         running_loss = 0.0
+        dice_loss = 0.0
         # training
         for batch in train_dataloader:
 
             image = torch.unsqueeze(batch[0], dim=0)
             image = image.to(device=device, dtype=torch.float32)
             gt = batch[1].to(device=device, dtype=torch.long)
-
             optimizer.zero_grad()
 
             with autocast():
@@ -98,10 +105,12 @@ def training_fn(model,
             # plot in tensorboard
             plot_3d_image(batch[0], batch[1], pred, loss, step=epoch, writer=writer)
 
-            dice_loss = dice(input=batch[1], target=pred)
+            dice_loss += dice(input=batch[1], target=pred)
+
             print(f'Dice loss : {dice_loss}')
 
         writer.add_scalar("Loss/train", (running_loss / i), epoch)
+        save_metrics(epoch, (running_loss / i), (dice_loss / i), checkpoint_handler)
         print(f'Epoch : {epoch}, running loss : {running_loss}, loss: {(running_loss / i):.4f}')
         logger.info(f'Epoch : {epoch}, running loss : {running_loss}, loss: {(running_loss / i)}')
 
@@ -129,20 +138,26 @@ def training_fn(model,
         print(f'Validation loss : {val_loss:.4f}')
         logger.info(f'Validation loss : {val_loss}')
         writer.add_scalar("Validation Loss", val_loss, epoch)
-
         torch.cuda.empty_cache()
         writer.flush()
 
+    # save metrics checkpoint
+    path = checkpoint_handler.generate_checkpoint_path(path2save=checkpoint_path)
+    checkpoint_handler.save_checkpoint(checkpoint_path + '/model1.pth', iteration=epoch, model=model,
+                                       optimizer=optimizer)
+
     # save checkpoint
     if save_checkpoint and val_loss < best_validation_loss:
-        model_name = 'model.pth'
+        model_name = 'best_model.pth'
         model_path = os.path.join(checkpoint_path, model_name)
         if os.path.exists(model_path):  # checking if there is a file with this name
             os.remove(model_path)  # deleting the file
         checkpoint = model.state_dict()
         torch.save(checkpoint, model_path)
+        best_validation_loss = val_loss
         logger.info(f'Best checkpoint at epoch - {epoch} saved')
         logger.info(f'Best validation loss - {best_validation_loss}')
+
     writer.close()
 
     logger.info('Training completed')

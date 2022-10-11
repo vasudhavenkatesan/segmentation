@@ -60,12 +60,14 @@ def main():
     else:
         model = UNET(param_arg.n_channels, param_arg.n_classes)
         logger.debug(f'UNET model initialised')
-
-    training_fn(model=model, device=device, epochs=param_arg.epochs,
-                batch_size=param_arg.batch_size,
-                learning_rate=param_arg.learning_rate, valiation_percent=param_arg.validation_perc,
-                input_dim=img_size, load_checkpoint=param_arg.load_cp)
-
+    try:
+        training_fn(model=model, device=device, epochs=param_arg.epochs,
+                    batch_size=param_arg.batch_size,
+                    learning_rate=param_arg.learning_rate, valiation_percent=param_arg.validation_perc,
+                    input_dim=img_size, load_checkpoint=param_arg.load_cp, model_name=param_arg.model_name)
+    except:
+        logger.exception('Got exception on main handler')
+        raise
     logger.debug('Process completed')
 
 
