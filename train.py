@@ -110,7 +110,7 @@ def training_fn(model,
             print(f'Dice loss : {dice_loss}')
 
         writer.add_scalar("Loss/train", (running_loss / i), epoch)
-        save_metrics(epoch, (running_loss / i), (dice_loss / i), checkpoint_handler)
+        save_metrics(epoch, (running_loss / i), (dice_loss / i), checkpoint_handler, 'train')
         print(f'Epoch : {epoch}, running loss : {running_loss}, loss: {(running_loss / i):.4f}')
         logger.info(f'Epoch : {epoch}, running loss : {running_loss}, loss: {(running_loss / i)}')
 
@@ -138,12 +138,13 @@ def training_fn(model,
         print(f'Validation loss : {val_loss:.4f}')
         logger.info(f'Validation loss : {val_loss}')
         writer.add_scalar("Validation Loss", val_loss, epoch)
+        save_metrics(epoch, (running_loss / i), (dice_loss / i), checkpoint_handler, 'validation')
         torch.cuda.empty_cache()
         writer.flush()
 
     # save metrics checkpoint
     path = checkpoint_handler.generate_checkpoint_path(path2save=checkpoint_path)
-    checkpoint_handler.save_checkpoint(checkpoint_path + '/model1.pth', iteration=epoch, model=model,
+    checkpoint_handler.save_checkpoint(checkpoint_path + '/metrics.pth', iteration=epoch, model=model,
                                        optimizer=optimizer)
 
     # save checkpoint

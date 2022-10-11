@@ -51,10 +51,14 @@ def visualise(img, mask):
     plt.show()
 
 
-def save_metrics(epoch, loss, dice_loss, checkpoint_handler):
-    checkpoint_handler.store_running_var_with_header(header='train', var_name='loss', iteration=epoch, value=loss)
-    checkpoint_handler.store_running_var_with_header(header='train', var_name='dice_score', iteration=epoch,
-                                                     value=dice_loss)
+def save_metrics(epoch, loss, dice_loss, checkpoint_handler, type):
+    if type == 'train':
+        checkpoint_handler.store_running_var_with_header(header='train', var_name='loss', iteration=epoch, value=loss)
+        checkpoint_handler.store_running_var_with_header(header='train', var_name='dice_score', iteration=epoch,
+                                                         value=dice_loss)
+    elif type == 'validation':
+        checkpoint_handler.store_running_var_with_header(header='validation', var_name='dice_score', iteration=epoch,
+                                                         value=loss)
 
 
 def evaluate_model(checkpoint_name):
@@ -68,6 +72,7 @@ def evaluate_model(checkpoint_name):
     learning_rate = checkpoint_handler.get_var(var_name='learning_rate')
     train_loss = []
     dice_loss = []
+    validation_loss = []
     for i in range(0, epochs):
         train_loss.append(
             checkpoint_handler.get_running_var_with_header(header='train', var_name='loss',
@@ -75,18 +80,21 @@ def evaluate_model(checkpoint_name):
         dice_loss.append(
             checkpoint_handler.get_running_var_with_header(header='train', var_name='dice_score',
                                                            iteration=i).detach().numpy())
+        validation_loss.append(
+            checkpoint_handler.get_running_var_with_header(header='validation', var_name='loss',
+                                                           iteration=i))
 
-    plot_metrics(model_name, epochs, batch_size, learning_rate, train_loss, dice_loss)
+    plot_metrics(model_name, epochs, batch_size, learning_rate, train_loss, dice_loss, validation_loss)
 
 
-def plot_metrics(model_name, epochs, batch_size, learning_rate, train_loss, dice_loss):
+def plot_metrics(model_name, epochs, batch_size, learning_rate, train_loss, dice_loss, validation_loss):
     date = datetime.now().strftime("%d_%m_%I_%M_%S_%p")
-    filename = model_name + '_' + date
+    filename = model_name + '_loss_' + date
     epochs = range(0, epochs)
     plt.figure(filename)
     plt.plot(epochs, train_loss, 'g', label='Training loss')
-    plt.plot(epochs, dice_loss, 'b', label='Dice loss')
-    plt.title('Training and Dice loss')
+    plt.plot(epochs, validation_loss, 'b', label='validation loss')
+    plt.title('Training and validation loss')
     plt.xlabel('Epochs')
     plt.ylabel('Loss')
     plt.legend()
@@ -95,5 +103,5 @@ def plot_metrics(model_name, epochs, batch_size, learning_rate, train_loss, dice
 
 
 if __name__ == '__main__':
-    checkpoint_path = Path('../checkpoints/model1.pth')
+    checkpoint_path = Path('../checkpoints/metrics.pth')
     evaluate_model(checkpoint_path)
