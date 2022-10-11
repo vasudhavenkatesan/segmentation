@@ -98,7 +98,6 @@ def plot_metrics(model_name, epochs, batch_size, learning_rate, train_loss, dice
     plt.xlabel('Epochs')
     plt.ylabel('Loss')
     plt.legend()
-    plt.show()
     plt.savefig(filename)
 
 

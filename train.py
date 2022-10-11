@@ -138,7 +138,7 @@ def training_fn(model,
         print(f'Validation loss : {val_loss:.4f}')
         logger.info(f'Validation loss : {val_loss}')
         writer.add_scalar("Validation Loss", val_loss, epoch)
-        save_metrics(epoch, (running_loss / i), (dice_loss / i), checkpoint_handler, 'validation')
+        save_metrics(epoch, val_loss, 0.0, checkpoint_handler, 'validation')
         torch.cuda.empty_cache()
         writer.flush()
 
