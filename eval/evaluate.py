@@ -8,57 +8,12 @@ from pytorchcheckpoint.checkpoint import CheckpointHandler
 import config
 
 
-def mIoU(y_pred, y_true):
-    y_pred = (y_pred.data.cpu().numpy()).argmax(axis=1)
-    y_true = y_true.cpu().numpy()
-    y_pred = y_pred.flatten()
-    y_true = y_true.flatten()
-    # Accuracy Score
-    val = accuracy_score(y_true, y_pred, normalize=True, sample_weight=None)
-    ((y_pred == y_true).all(axis=0).sum() / y_pred.shape[0])
-    print(f'Accuract score - {val}')
-    # Hamming Loss
-    hamming_loss(y_true, y_pred)
-    scores = (y_pred != y_true).sum(axis=0)
-    numerator = scores.sum()
-    denominator = ((scores != 0).sum() * y_true.shape[0])
-    hl = (numerator / denominator)
-    print(f'Hamming loss - {hl}')
-    current = confusion_matrix(y_true, y_pred, labels=[0, 1, 2])
-    intersection = np.diag(current)
-    ground_truth_set = current.sum(axis=1)
-    predicted_set = current.sum(axis=0)
-    union = ground_truth_set + predicted_set - intersection
-    IoU = np.divide(intersection, union.astype(np.float32), where=union != 0)
-    return np.mean(IoU)
-
-    # return val, hl, np.mean(IoU)
-
-
-def visualise(img, mask):
-    classes = mask.shape[0] if len(mask.shape) > 2 else 1
-    fig, ax = plt.subplots(1, classes + 1)
-    ax[0].set_title('Input image')
-    ax[0].imshow(img)
-    if classes > 1:
-        for i in range(classes):
-            ax[i + 1].set_title(f'Output mask (class {i + 1})')
-            ax[i + 1].imshow(mask[1, :, :])
-    else:
-        ax[1].set_title(f'Output mask')
-        ax[1].imshow(mask)
-    plt.xticks([]), plt.yticks([])
-    plt.show()
-
-
-def save_metrics(epoch, loss, dice_loss, checkpoint_handler, type):
-    if type == 'train':
-        checkpoint_handler.store_running_var_with_header(header='train', var_name='loss', iteration=epoch, value=loss)
-        checkpoint_handler.store_running_var_with_header(header='train', var_name='dice_score', iteration=epoch,
-                                                         value=dice_loss)
-    elif type == 'validation':
-        checkpoint_handler.store_running_var_with_header(header='validation', var_name='dice_score', iteration=epoch,
-                                                         value=loss)
+def save_metrics(epoch, loss, dice_loss, accuracy, checkpoint_handler, type):
+    checkpoint_handler.store_running_var_with_header(header=type, var_name='loss', iteration=epoch, value=loss)
+    checkpoint_handler.store_running_var_with_header(header=type, var_name='dice_score', iteration=epoch,
+                                                     value=dice_loss)
+    checkpoint_handler.store_running_var_with_header(header=type, var_name='accuracy', iteration=epoch,
+                                                     value=accuracy)
 
 
 def evaluate_model(checkpoint_name):
@@ -73,32 +28,48 @@ def evaluate_model(checkpoint_name):
     train_loss = []
     dice_loss = []
     validation_loss = []
+    accuracy = []
     for i in range(0, epochs):
         train_loss.append(
             checkpoint_handler.get_running_var_with_header(header='train', var_name='loss',
                                                            iteration=i).detach().numpy())
         dice_loss.append(
-            checkpoint_handler.get_running_var_with_header(header='train', var_name='dice_score',
+            checkpoint_handler.get_running_var_with_header(header='validation', var_name='dice_score',
+                                                           iteration=i).detach().numpy())
+        accuracy.append(
+            checkpoint_handler.get_running_var_with_header(header='validation', var_name='accuracy',
                                                            iteration=i).detach().numpy())
         validation_loss.append(
-            checkpoint_handler.get_running_var_with_header(header='validation', var_name='loss',
+            checkpoint_handler.get_running_var_with_header(header='validation', var_name='val_loss',
                                                            iteration=i))
 
-    plot_metrics(model_name, epochs, batch_size, learning_rate, train_loss, dice_loss, validation_loss)
+    plot_metrics(model_name, epochs, batch_size, learning_rate, train_loss, dice_loss, accuracy, validation_loss)
 
 
-def plot_metrics(model_name, epochs, batch_size, learning_rate, train_loss, dice_loss, validation_loss):
-    date = datetime.now().strftime("%d_%m_%I_%M_%S_%p")
-    filename = model_name + '_loss_' + date
+def plot_metrics(model_name, epochs, batch_size, learning_rate, train_loss, dice_loss, accuracy, validation_loss):
+    cell_text = [[f'Model name:', f'{model_name}'], [f'Epochs', f'{epochs}'], [f'Batch size', f'{batch_size}'],
+                 [f'Learning rate', f'{learning_rate}'], [f'Average Dice loss', f'{dice_loss[-1]:1.4f}'],
+                 [f'Accuracy', f'{accuracy[-1]:1.4f}']]
+
+    date = datetime.now().strftime("%d_%m")
+    filename = model_name + '_metrics_' + date
+    fig = plt.figure(filename)
+    plt.title('Model metrics')
+    axs = fig.subplots(2, 1)
     epochs = range(0, epochs)
-    plt.figure(filename)
-    plt.plot(epochs, train_loss, 'g', label='Training loss')
-    plt.plot(epochs, validation_loss, 'b', label='validation loss')
-    plt.title('Training and validation loss')
-    plt.xlabel('Epochs')
-    plt.ylabel('Loss')
-    plt.legend()
-    plt.savefig(filename)
+    the_table = axs[0].table(cellText=cell_text, loc='center')
+    the_table.scale(1.5, 1)
+    axs[0].axis('tight')
+    axs[0].axis('off')
+
+    axs[1].plot(epochs, train_loss, 'g', label='Training loss')
+    axs[1].plot(epochs, validation_loss, 'b', label='validation loss')
+
+    axs[1].set_xlabel('Epochs')
+    axs[1].set_ylabel('Loss')
+    axs[1].legend()
+    plt.show()
+    fig.savefig(filename)
 
 
 if __name__ == '__main__':

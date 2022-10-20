@@ -84,10 +84,10 @@ class UNETR(nn.Module):
 
 
 def test():
-    x = torch.randn((1, 1, 80, 256, 256))
-    model = UNETR(in_channels=1, out_channels=2, img_size=[80, 256, 256])
+    x = torch.randn((4, 1, 64, 128, 128))
+    model = UNETR(in_channels=1, out_channels=2, img_size=[64, 128, 128])
     model.to(device)
-    preds = model(x.cuda())
+    preds = model(x.to(device))
     print(preds.argmax(dim=1).shape)
     print(f'Final - {preds.shape}')
 

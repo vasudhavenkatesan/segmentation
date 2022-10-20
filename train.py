@@ -8,7 +8,7 @@ from torch.cuda.amp import GradScaler
 from torch.cuda.amp import autocast
 from dataset import hdf5
 from utils import plot_image, plot_3d_image
-from eval.DiceLoss import dice
+from eval.metrics import dice, accuracy
 from eval.evaluate import save_metrics
 import config
 import tqdm
@@ -32,7 +32,7 @@ def training_fn(model,
                 batch_size: int = 1,
                 learning_rate: float = 1e-3,
                 valiation_percent=0.1,
-                load_checkpoint: bool = True,
+                load_checkpoint: bool = False,
                 save_checkpoint: bool = True):
     # create dataset
     dataset = hdf5.Hdf5Dataset(data_file_path, reqd_image_dim=input_dim, contains_mask=True)
@@ -77,48 +77,45 @@ def training_fn(model,
         model.to(device)
         model.train()
 
-        i = 0
         running_loss = 0.0
         dice_loss = 0.0
+        val_dice_loss = 0.0
+        accuracy_score = 0.0
         # training
-        for batch in train_dataloader:
+        for index, batch in enumerate(train_dataloader):
 
-            image = torch.unsqueeze(batch[0], dim=0)
-            image = image.to(device=device, dtype=torch.float32)
+            image = batch[0].unsqueeze(1).to(device=device, dtype=torch.float32)
             gt = batch[1].to(device=device, dtype=torch.long)
             optimizer.zero_grad()
 
             with autocast():
                 pred = model(image)
                 loss = criterion(pred, gt)
-            i += 1
+
             # Backpropagation
             scaler.scale(loss.mean()).backward()
             scaler.step(optimizer)
 
-            running_loss += loss.mean()
+            running_loss += float(loss.mean())
             scaler.update()
 
             if epoch == (epochs - 1):
-                plot_image(batch[0], batch[1], pred, 'train', i)
+                plot_image(batch[0], batch[1], pred, 'train', index)
 
             # plot in tensorboard
             plot_3d_image(batch[0], batch[1], pred, loss, step=epoch, writer=writer)
 
-            dice_loss += dice(input=batch[1], target=pred)
-
-            print(f'Dice loss : {dice_loss}')
-
-        writer.add_scalar("Loss/train", (running_loss / i), epoch)
-        save_metrics(epoch, (running_loss / i), (dice_loss / i), checkpoint_handler, 'train')
-        print(f'Epoch : {epoch}, running loss : {running_loss}, loss: {(running_loss / i):.4f}')
-        logger.info(f'Epoch : {epoch}, running loss : {running_loss}, loss: {(running_loss / i)}')
+        writer.add_scalar("Loss/train", (running_loss / batch_size), epoch)
+        save_metrics(epoch, (running_loss / batch_size), 0, 0, checkpoint_handler, 'train')
+        print(f'Epoch : {epoch}, running loss : {running_loss}, loss: {(running_loss / batch_size):.4f}')
+        logger.info(f'Epoch : {epoch}, running loss : {running_loss}, loss: {(running_loss / batch_size)}')
 
         # validation
         logger.info('Validation step')
         model.eval()
         val_loss = 0.0
-        for batch in val_dataloader:
+        i = 0
+        for index, batch in enumerate(val_dataloader):
             image = torch.unsqueeze(batch[0], dim=0)
             image = image.to(device=device, dtype=torch.float32)
             gt = batch[1].to(device=device, dtype=torch.long)
@@ -129,16 +126,20 @@ def training_fn(model,
                 loss = criterion(pred, gt)
 
                 val_loss += loss.mean()
+                i += 1
 
                 if epoch == (epochs - 1):
                     plot_image(batch[0], batch[1], pred, 'val', 0)
 
-            plot_3d_image(batch[0], batch[1], pred, loss, step=epoch, writer=writer)
+            plot_3d_image(batch[0], batch[1], pred, val_loss / i, step=epoch, writer=writer)
 
+            val_dice_loss += dice(test=pred, reference=batch[1].to(device=device, dtype=torch.long))
+            accuracy_score += accuracy(test=pred, reference=batch[1].to(device=device, dtype=torch.long))
         print(f'Validation loss : {val_loss:.4f}')
         logger.info(f'Validation loss : {val_loss}')
         writer.add_scalar("Validation Loss", val_loss, epoch)
-        save_metrics(epoch, val_loss, 0.0, checkpoint_handler, 'validation')
+        if n_val != 0:
+            save_metrics(epoch, val_loss / i, val_dice_loss / i, accuracy_score / i, checkpoint_handler, 'validation')
         torch.cuda.empty_cache()
         writer.flush()
 
