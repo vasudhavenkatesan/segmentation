@@ -76,7 +76,8 @@ def dice(test=None, reference=None, confusion_matrix=None, nan_for_nonexisting=T
         confusion_matrix = ConfusionMatrix(test, reference)
 
     tp, fp, tn, fn = confusion_matrix.get_matrix()
-    return float(2. * tp / (2 * tp + fp + fn))
+    smooth = 1
+    return float(2. * (tp + smooth) / (2 * tp + fp + fn + smooth))
 
 
 def accuracy(test=None, reference=None, confusion_matrix=None, **kwargs):
@@ -86,5 +87,5 @@ def accuracy(test=None, reference=None, confusion_matrix=None, **kwargs):
         confusion_matrix = ConfusionMatrix(test, reference)
 
     tp, fp, tn, fn = confusion_matrix.get_matrix()
-
-    return float((tp + tn) / (tp + fp + tn + fn))
+    smooth = 1
+    return float((tp + tn + smooth) / (tp + fp + tn + fn + smooth))
