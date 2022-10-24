@@ -104,12 +104,12 @@ def training_fn(model,
 
             # plot in tensorboard
             plot_3d_image(batch[0], batch[1], pred, loss, step=epoch, writer=writer)
-            dice_loss += dice(test=torch.sigmoid(pred[:, 1, :]), reference=gt)
-            accuracy_score += accuracy(test=torch.sigmoid(pred[:, 1, :]), reference=gt)
+            dice_loss += dice(test=pred.argmax(1), reference=gt)
+            accuracy_score += accuracy(test=pred.argmax(1), reference=gt)
 
         writer.add_scalar('Loss/train', (running_loss / n_train), epoch)
-        writer.add_scalar('Accuracy', (accuracy_score / n_train))
-        writer.add_scalar('Dice score', (dice_loss / n_train))
+        writer.add_scalar('Accuracy', (accuracy_score / n_train), epoch)
+        writer.add_scalar('Dice score', (dice_loss / n_train), epoch)
 
         save_metrics(epoch, (running_loss / n_train), 0, 0, checkpoint_handler, 'train')
         print(f'Epoch : {epoch}, running loss : {running_loss}, loss: {(running_loss / n_train):.4f}')
@@ -137,14 +137,14 @@ def training_fn(model,
                 if epoch == (epochs - 1):
                     plot_image(batch[0], batch[1], pred, 'val', 0)
 
-            val_dice_loss += dice(test=torch.sigmoid(pred[:, 1, :]),
-                                  reference=batch[1].to(device=device, dtype=torch.long))
-            accuracy_score += accuracy(test=torch.sigmoid(pred[:, 1, :]),
-                                       reference=batch[1].to(device=device, dtype=torch.long))
+            val_dice_loss += dice(test=pred.argmax(1), reference=gt)
+            accuracy_score += accuracy(test=pred.argmax(1), reference=gt)
         print(f'Validation loss : {val_loss:.4f}')
         print(f'Accuracy - {accuracy_score / n_val}, dice score - {val_dice_loss / n_val}')
         logger.info(f'Validation loss : {val_loss}')
         writer.add_scalar("Validation Loss", val_loss, epoch)
+        writer.add_scalar('Val Accuracy', (accuracy_score / n_val), epoch)
+        writer.add_scalar('Val Dice score', (dice_loss / n_val), epoch)
         if n_val != 0:
             save_metrics(epoch, val_loss / i, val_dice_loss / i, accuracy_score / i, checkpoint_handler, 'validation')
         torch.cuda.empty_cache()
