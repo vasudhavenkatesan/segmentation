@@ -25,7 +25,7 @@ def get_param_arguments():
                         help="Batch size - Number of datasets in each training batch")
     parser.add_argument("--learning_rate", type=float, default=3e-5,
                         help="Learning rate for optimizer")
-    parser.add_argument("--validation_perc", type=float, default=0.5,
+    parser.add_argument("--validation_perc", type=float, default=0.1,
                         help="Percent of validation set")
     parser.add_argument("--n_channels", type=int, default=1,
                         help="Number of channels in the image")

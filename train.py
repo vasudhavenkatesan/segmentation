@@ -104,20 +104,23 @@ def training_fn(model,
 
             # plot in tensorboard
             plot_3d_image(batch[0], batch[1], pred, loss, step=epoch, writer=writer)
-            print(
-                f'Train dice - {dice(test=torch.sigmoid(pred[:, 1, :]), reference=batch[1].to(device=device, dtype=torch.long))}')
-            print(
-                f'Accuracy - {accuracy(test=torch.sigmoid(pred[:, 1, :]), reference=batch[1].to(device=device, dtype=torch.long))}')
+            dice_loss += dice(test=torch.sigmoid(pred[:, 1, :]), reference=gt)
+            accuracy_score += accuracy(test=torch.sigmoid(pred[:, 1, :]), reference=gt)
 
-        writer.add_scalar("Loss/train", (running_loss / batch_size), epoch)
-        save_metrics(epoch, (running_loss / batch_size), 0, 0, checkpoint_handler, 'train')
-        print(f'Epoch : {epoch}, running loss : {running_loss}, loss: {(running_loss / batch_size):.4f}')
-        logger.info(f'Epoch : {epoch}, running loss : {running_loss}, loss: {(running_loss / batch_size)}')
+        writer.add_scalar('Loss/train', (running_loss / n_train), epoch)
+        writer.add_scalar('Accuracy', (accuracy_score / n_train))
+        writer.add_scalar('Dice score', (dice_loss / n_train))
+
+        save_metrics(epoch, (running_loss / n_train), 0, 0, checkpoint_handler, 'train')
+        print(f'Epoch : {epoch}, running loss : {running_loss}, loss: {(running_loss / n_train):.4f}')
+        print(f'Accuracy : {accuracy_score / n_train}, Dice score:{dice_loss / n_train}')
+        logger.info(f'Epoch : {epoch}, running loss : {running_loss}, loss: {(running_loss / n_train)}')
 
         # validation
         logger.info('Validation step')
         model.eval()
         val_loss = 0.0
+        accuracy_score = 0.0
         i = 0
         for index, batch in enumerate(val_dataloader):
             image = batch[0].unsqueeze(1).to(device=device, dtype=torch.float32)
@@ -139,6 +142,7 @@ def training_fn(model,
             accuracy_score += accuracy(test=torch.sigmoid(pred[:, 1, :]),
                                        reference=batch[1].to(device=device, dtype=torch.long))
         print(f'Validation loss : {val_loss:.4f}')
+        print(f'Accuracy - {accuracy_score / n_val}, dice score - {val_dice_loss / n_val}')
         logger.info(f'Validation loss : {val_loss}')
         writer.add_scalar("Validation Loss", val_loss, epoch)
         if n_val != 0:
