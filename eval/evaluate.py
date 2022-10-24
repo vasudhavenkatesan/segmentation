@@ -32,15 +32,15 @@ def evaluate_model(checkpoint_name):
     for i in range(0, epochs):
         train_loss.append(
             checkpoint_handler.get_running_var_with_header(header='train', var_name='loss',
-                                                           iteration=i).detach().numpy())
+                                                           iteration=i))
         dice_loss.append(
             checkpoint_handler.get_running_var_with_header(header='validation', var_name='dice_score',
-                                                           iteration=i).detach().numpy())
+                                                           iteration=i))
         accuracy.append(
             checkpoint_handler.get_running_var_with_header(header='validation', var_name='accuracy',
-                                                           iteration=i).detach().numpy())
+                                                           iteration=i))
         validation_loss.append(
-            checkpoint_handler.get_running_var_with_header(header='validation', var_name='val_loss',
+            checkpoint_handler.get_running_var_with_header(header='validation', var_name='loss',
                                                            iteration=i))
 
     plot_metrics(model_name, epochs, batch_size, learning_rate, train_loss, dice_loss, accuracy, validation_loss)
@@ -48,8 +48,8 @@ def evaluate_model(checkpoint_name):
 
 def plot_metrics(model_name, epochs, batch_size, learning_rate, train_loss, dice_loss, accuracy, validation_loss):
     cell_text = [[f'Model name:', f'{model_name}'], [f'Epochs', f'{epochs}'], [f'Batch size', f'{batch_size}'],
-                 [f'Learning rate', f'{learning_rate}'], [f'Average Dice loss', f'{dice_loss[-1]:1.4f}'],
-                 [f'Accuracy', f'{accuracy[-1]:1.4f}']]
+                 [f'Learning rate', f'{learning_rate}'], [f'Average Dice loss', f'{dice_loss[-1]}'],
+                 [f'Accuracy', f'{accuracy[-1]}']]
 
     date = datetime.now().strftime("%d_%m")
     filename = model_name + '_metrics_' + date
@@ -57,8 +57,8 @@ def plot_metrics(model_name, epochs, batch_size, learning_rate, train_loss, dice
     plt.title('Model metrics')
     axs = fig.subplots(2, 1)
     epochs = range(0, epochs)
-    the_table = axs[0].table(cellText=cell_text, loc='center')
-    the_table.scale(1.5, 1)
+    the_table = axs[0].table(cellText=cell_text, loc='top')
+
     axs[0].axis('tight')
     axs[0].axis('off')
 
@@ -73,5 +73,5 @@ def plot_metrics(model_name, epochs, batch_size, learning_rate, train_loss, dice
 
 
 if __name__ == '__main__':
-    checkpoint_path = Path('../checkpoints/metrics.pth')
+    checkpoint_path = Path('../checkpoints/unet/metrics.pth')
     evaluate_model(checkpoint_path)

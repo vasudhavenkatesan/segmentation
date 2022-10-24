@@ -104,6 +104,10 @@ def training_fn(model,
 
             # plot in tensorboard
             plot_3d_image(batch[0], batch[1], pred, loss, step=epoch, writer=writer)
+            print(
+                f'Train dice - {dice(test=torch.sigmoid(pred[:, 1, :]), reference=batch[1].to(device=device, dtype=torch.long))}')
+            print(
+                f'Accuracy - {accuracy(test=torch.sigmoid(pred[:, 1, :]), reference=batch[1].to(device=device, dtype=torch.long))}')
 
         writer.add_scalar("Loss/train", (running_loss / batch_size), epoch)
         save_metrics(epoch, (running_loss / batch_size), 0, 0, checkpoint_handler, 'train')
@@ -116,8 +120,7 @@ def training_fn(model,
         val_loss = 0.0
         i = 0
         for index, batch in enumerate(val_dataloader):
-            image = torch.unsqueeze(batch[0], dim=0)
-            image = image.to(device=device, dtype=torch.float32)
+            image = batch[0].unsqueeze(1).to(device=device, dtype=torch.float32)
             gt = batch[1].to(device=device, dtype=torch.long)
 
             with torch.no_grad():
@@ -131,10 +134,10 @@ def training_fn(model,
                 if epoch == (epochs - 1):
                     plot_image(batch[0], batch[1], pred, 'val', 0)
 
-            plot_3d_image(batch[0], batch[1], pred, val_loss / i, step=epoch, writer=writer)
-
-            val_dice_loss += dice(test=pred, reference=batch[1].to(device=device, dtype=torch.long))
-            accuracy_score += accuracy(test=pred, reference=batch[1].to(device=device, dtype=torch.long))
+            val_dice_loss += dice(test=torch.sigmoid(pred[:, 1, :]),
+                                  reference=batch[1].to(device=device, dtype=torch.long))
+            accuracy_score += accuracy(test=torch.sigmoid(pred[:, 1, :]),
+                                       reference=batch[1].to(device=device, dtype=torch.long))
         print(f'Validation loss : {val_loss:.4f}')
         logger.info(f'Validation loss : {val_loss}')
         writer.add_scalar("Validation Loss", val_loss, epoch)
