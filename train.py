@@ -81,6 +81,7 @@ def training_fn(model,
         dice_loss = 0.0
         val_dice_loss = 0.0
         accuracy_score = 0.0
+        n = n_train / batch_size
         # training
         for index, batch in enumerate(train_dataloader):
 
@@ -107,14 +108,14 @@ def training_fn(model,
             dice_loss += dice(test=pred.argmax(1), reference=gt)
             accuracy_score += accuracy(test=pred.argmax(1), reference=gt)
 
-        writer.add_scalar('Loss/train', (running_loss / n_train), epoch)
-        writer.add_scalar('Accuracy', (accuracy_score / n_train), epoch)
-        writer.add_scalar('Dice score', (dice_loss / n_train), epoch)
+        writer.add_scalar('Loss/train', (running_loss / n), epoch)
+        writer.add_scalar('Accuracy', (accuracy_score / n), epoch)
+        writer.add_scalar('Dice score', (dice_loss / n), epoch)
 
-        save_metrics(epoch, (running_loss / n_train), 0, 0, checkpoint_handler, 'train')
-        print(f'Epoch : {epoch}, running loss : {running_loss}, loss: {(running_loss / n_train):.4f}')
-        print(f'Accuracy : {accuracy_score / n_train}, Dice score:{dice_loss / n_train}')
-        logger.info(f'Epoch : {epoch}, running loss : {running_loss}, loss: {(running_loss / n_train)}')
+        save_metrics(epoch, (running_loss / n), 0, 0, checkpoint_handler, 'train')
+        print(f'Epoch : {epoch}, running loss : {running_loss}, loss: {(running_loss / n):.4f}')
+        print(f'Accuracy : {accuracy_score / n}, Dice score:{dice_loss / n}')
+        logger.info(f'Epoch : {epoch}, running loss : {running_loss}, loss: {(running_loss / n)}')
 
         # validation
         logger.info('Validation step')
