@@ -69,23 +69,23 @@ class ConfusionMatrix:
         return self.size
 
 
-def dice(test=None, reference=None, confusion_matrix=None, nan_for_nonexisting=True, **kwargs):
+def dice(test=None, reference=None, confusion_matrix=None, epsilon=1e-6):
     """2TP / (2TP + FP + FN)"""
 
     if confusion_matrix is None:
         confusion_matrix = ConfusionMatrix(test, reference)
 
     tp, fp, tn, fn = confusion_matrix.get_matrix()
-    smooth = 1
-    return float(2. * (tp + smooth) / (2 * tp + fp + fn + smooth))
+
+    return float(2. * tp / (2 * tp + fp + fn + epsilon))
 
 
-def accuracy(test=None, reference=None, confusion_matrix=None, **kwargs):
+def accuracy(test=None, reference=None, confusion_matrix=None, epsilon=1e-6):
     """(TP + TN) / (TP + FP + FN + TN)"""
 
     if confusion_matrix is None:
         confusion_matrix = ConfusionMatrix(test, reference)
 
     tp, fp, tn, fn = confusion_matrix.get_matrix()
-    smooth = 1
-    return float((tp + tn + smooth) / (tp + fp + tn + fn + smooth))
+
+    return float((tp + tn) / (tp + fp + tn + fn + epsilon))
