@@ -80,7 +80,7 @@ def dice(test=None, reference=None, confusion_matrix=None, epsilon=1e-6):
     return float(2. * tp / (2 * tp + fp + fn + epsilon))
 
 
-def accuracy(test=None, reference=None, confusion_matrix=None, epsilon=1e-6):
+def accuracy(test=None, reference=None, confusion_matrix=None):
     """(TP + TN) / (TP + FP + FN + TN)"""
 
     if confusion_matrix is None:
@@ -88,4 +88,4 @@ def accuracy(test=None, reference=None, confusion_matrix=None, epsilon=1e-6):
 
     tp, fp, tn, fn = confusion_matrix.get_matrix()
 
-    return float((tp + tn) / (tp + fp + tn + fn + epsilon))
+    return float((tp + tn) / (tp + fp + tn + fn))

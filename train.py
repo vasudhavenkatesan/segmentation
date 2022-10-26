@@ -145,7 +145,7 @@ def training_fn(model,
         logger.info(f'Validation loss : {val_loss}')
         writer.add_scalar("Validation Loss", val_loss, epoch)
         writer.add_scalar('Val Accuracy', (accuracy_score / n_val), epoch)
-        writer.add_scalar('Val Dice score', (dice_loss / n_val), epoch)
+        writer.add_scalar('Val Dice score', (val_dice_loss / n_val), epoch)
         if n_val != 0:
             save_metrics(epoch, val_loss / i, val_dice_loss / i, accuracy_score / i, checkpoint_handler, 'validation')
         torch.cuda.empty_cache()
@@ -157,7 +157,7 @@ def training_fn(model,
                                        optimizer=optimizer)
 
     # save checkpoint
-    if save_checkpoint and val_loss < best_validation_loss:
+    if save_checkpoint:
         model_name = 'best_model.pth'
         model_path = os.path.join(checkpoint_path, model_name)
         if os.path.exists(model_path):  # checking if there is a file with this name

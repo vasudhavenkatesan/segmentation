@@ -21,7 +21,8 @@ def get_file_list_from_dir(filepath):
 
 
 class Hdf5Dataset(Dataset):
-    def __init__(self, filepath, reqd_image_dim, contains_mask: bool = True, mask_file_type: str = "h5"):
+    def __init__(self, filepath, reqd_image_dim, contains_mask: bool = True, mask_file_type: str = "h5",
+                 is_test: bool = False):
         logging.info('Initialising dataset from HDF5 files')
         self.image_id = {}
         self.contains_mask = contains_mask
@@ -30,7 +31,7 @@ class Hdf5Dataset(Dataset):
         self.dirpath = filepath
         self.rand_crop = RandomCrop3D(reqd_image_dim)
         self.mask_file_type = mask_file_type
-
+        self.is_test = is_test
         mean, std = self.compute_mean_and_std()
         self.transform_norm = transforms.Compose([
             transforms.Normalize(mean=mean, std=std)
@@ -39,7 +40,8 @@ class Hdf5Dataset(Dataset):
     def __getitem__(self, index):
         # lazy loading of data
         image, label = self.get_image_and_label(self, index)
-        image, label = self.rand_crop(image, label)
+        if not self.is_test:
+            image, label = self.rand_crop(image, label)
         image = self.transform_norm(image)
         return image, label
 
