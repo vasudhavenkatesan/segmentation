@@ -3,28 +3,13 @@ import torch
 from scipy.ndimage import zoom
 
 
-# Add padding to the 3D data
-def padding(data_to_be_padded, dimensions, padding_value):
-    side_1, side_2 = calc_size_for_padding(np.array(dimensions), np.array(data_to_be_padded.shape))
-    out = np.pad(data_to_be_padded, (
-        (side_1[0], side_2[0]),
-        (side_1[1], side_2[1]),
-        (side_1[2], side_2[2])), "constant")
-    print(f'After padding {out.shape}\n')
-    return out
-
-
-def calc_size_for_padding(reqd_dim, data_dim):
-    l_size = (reqd_dim - data_dim) // 2
-    r_size = (reqd_dim - (data_dim + l_size))
-    return l_size, r_size
-
-
-def resize_image(reqd_dim, input):
-    resize_values = (reqd_dim[0] / input.shape[0],
-                     reqd_dim[1] / input.shape[1],
-                     reqd_dim[2] / input.shape[2])
-    return zoom(input, resize_values, mode='nearest')
+def resize_image(reqd_dim, image, label):
+    resize_values = (reqd_dim[0] / image.shape[0],
+                     reqd_dim[1] / image.shape[1],
+                     reqd_dim[2] / image.shape[2])
+    img = torch.from_numpy(zoom(image, resize_values, mode='nearest').astype(np.float32))
+    lbl = np.asarray(zoom(label, resize_values, mode='nearest'))
+    return img, lbl
 
 
 class RandomCrop3D:

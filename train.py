@@ -12,6 +12,7 @@ from eval.metrics import dice, accuracy
 from eval.evaluate import save_metrics
 import config
 import tqdm
+import numpy as np
 from pytorchcheckpoint.checkpoint import CheckpointHandler
 
 # Logger
@@ -86,7 +87,8 @@ def training_fn(model,
         for index, batch in enumerate(train_dataloader):
 
             image = batch[0].unsqueeze(1).to(device=device, dtype=torch.float32)
-            gt = batch[1].to(device=device, dtype=torch.long)
+            print(np.unique(batch[1]))
+            gt = batch[1].to(device=device, dtype=torch.int64)
             optimizer.zero_grad()
 
             with autocast():

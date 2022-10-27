@@ -8,6 +8,7 @@ from unetr.unetr import UNETR
 from dataset import hdf5
 import matplotlib.pyplot as plt
 from eval.metrics import dice, accuracy
+from patchify import patchify, unpatchify
 
 logger = config.get_logger()
 
@@ -32,6 +33,24 @@ def predict(net, input_path, input_dim, device):
         plt.title(f'Mask')
         plt.imshow(gt[-1, 12, :, :], cmap="gray")
         # 0, 2, 3)
+        predicted_patches = []
+        patches = patchify(image, (256, 256), step=64)
+        for i in range(patches.shape[0]):
+            for j in range(patches.shape[1]):
+                print(i, j)
+
+                single_patch = patches[i, j, :, :]
+                single_patch_norm = np.expand_dims(normalize(np.array(single_patch), axis=1), 2)
+                single_patch_input = np.expand_dims(single_patch_norm, 0)
+
+                # Predict and threshold for values above 0.5 probability
+                single_patch_prediction = (model.predict(single_patch_input)[0, :, :, 0] > 0.5).astype(np.uint8)
+                predicted_patches.append(single_patch_prediction)
+
+        predicted_patches = np.array(predicted_patches)
+
+        predicted_patches_reshaped = np.reshape(predicted_patches, (patches.shape[0], patches.shape[1], 256, 256))
+        reconstructed_image = unpatchify(predicted_patches_reshaped, large_image.shape)
         with torch.no_grad():
             prediction = net(image)
             plt.subplot(1, 3, 3)

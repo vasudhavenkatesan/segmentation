@@ -29,6 +29,7 @@ class Hdf5Dataset(Dataset):
         # stores the image and label ids only
         self.get_image_id(self, filepath)
         self.dirpath = filepath
+        self.reqd_dim = reqd_image_dim
         self.rand_crop = RandomCrop3D(reqd_image_dim)
         self.mask_file_type = mask_file_type
         self.is_test = is_test
@@ -40,8 +41,9 @@ class Hdf5Dataset(Dataset):
     def __getitem__(self, index):
         # lazy loading of data
         image, label = self.get_image_and_label(self, index)
-        if not self.is_test:
-            image, label = self.rand_crop(image, label)
+        # if not self.is_test:
+        # image, label = self.rand_crop(image, label)
+        image, label = resize_image(self.reqd_dim, image, label)
         image = self.transform_norm(image)
         return image, label
 
