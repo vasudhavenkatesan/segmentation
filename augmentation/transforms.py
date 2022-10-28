@@ -8,7 +8,7 @@ def resize_image(reqd_dim, image, label):
                      reqd_dim[1] / image.shape[1],
                      reqd_dim[2] / image.shape[2])
     img = torch.from_numpy(zoom(image, resize_values, mode='nearest').astype(np.float32))
-    lbl = np.asarray(zoom(label, resize_values, mode='nearest'))
+    lbl = np.asarray(zoom(label, resize_values, order=0, mode='nearest'))
     return img, lbl
 
 
