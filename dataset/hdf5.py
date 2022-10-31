@@ -41,9 +41,9 @@ class Hdf5Dataset(Dataset):
     def __getitem__(self, index):
         # lazy loading of data
         image, label = self.get_image_and_label(self, index)
-        # if not self.is_test:
         # image, label = self.rand_crop(image, label)
-        image, label = resize_image(self.reqd_dim, image, label)
+        if not self.is_test:
+            image, label = resize_image(self.reqd_dim, image, label)
         image = self.transform_norm(image)
         return image, label
 

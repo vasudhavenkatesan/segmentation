@@ -8,7 +8,8 @@ from unetr.unetr import UNETR
 from dataset import hdf5
 import matplotlib.pyplot as plt
 from eval.metrics import dice, accuracy
-from patchify import patchify, unpatchify
+from monai.inferers import sliding_window_inference
+import numpy as np
 
 logger = config.get_logger()
 
@@ -25,7 +26,7 @@ def predict(net, input_path, input_dim, device):
     accuracy_score = 0.0
     for index, batch in enumerate(dataloader):
         image = batch[0].unsqueeze(0)
-        gt = batch[1]
+        gt = batch[1].cpu().numpy()
         plt.subplot(1, 3, 1)
         plt.title(f'Image')
         plt.imshow(batch[0][-1, 12, :, :], cmap="gray")
@@ -33,32 +34,18 @@ def predict(net, input_path, input_dim, device):
         plt.title(f'Mask')
         plt.imshow(gt[-1, 12, :, :], cmap="gray")
         # 0, 2, 3)
-        predicted_patches = []
-        patches = patchify(image, (256, 256), step=64)
-        for i in range(patches.shape[0]):
-            for j in range(patches.shape[1]):
-                print(i, j)
 
-                single_patch = patches[i, j, :, :]
-                single_patch_norm = np.expand_dims(normalize(np.array(single_patch), axis=1), 2)
-                single_patch_input = np.expand_dims(single_patch_norm, 0)
-
-                # Predict and threshold for values above 0.5 probability
-                single_patch_prediction = (model.predict(single_patch_input)[0, :, :, 0] > 0.5).astype(np.uint8)
-                predicted_patches.append(single_patch_prediction)
-
-        predicted_patches = np.array(predicted_patches)
-
-        predicted_patches_reshaped = np.reshape(predicted_patches, (patches.shape[0], patches.shape[1], 256, 256))
-        reconstructed_image = unpatchify(predicted_patches_reshaped, large_image.shape)
         with torch.no_grad():
-            prediction = net(image)
+            val_outputs = sliding_window_inference(image, (64, 128, 128), 4, net, overlap=0.5)
+            val_outputs = torch.softmax(val_outputs, 1).cpu().numpy()
+            val_outputs = np.argmax(val_outputs, axis=1).astype(np.uint8)
+            # prediction = net(image)
             plt.subplot(1, 3, 3)
             plt.title('Predicted Mask')
-            pred_for_plot = prediction.argmax(dim=1)
-            plt.imshow(pred_for_plot[-1, 12, :, :], cmap='gray')
-            dice_loss += dice(test=pred_for_plot, reference=gt)
-            accuracy_score += accuracy(test=pred_for_plot, reference=gt)
+            # pred_for_plot = prediction.argmax(dim=1)
+            plt.imshow(val_outputs[-1, 12, :, :], cmap='gray')
+            dice_loss += dice(test=val_outputs, reference=gt)
+            accuracy_score += accuracy(test=val_outputs, reference=gt)
             plt.savefig('Segmentation')
     print('saving plot ---------')
     print(f'Accuracy - {accuracy_score / n_preds}, dice score - {dice_loss / n_preds}')
@@ -73,13 +60,13 @@ def get_param_arguments():
     parser.add_argument('--viz', '-v', action='store_true', help='Help tp visualise the images')
     parser.add_argument("--model_name", default='unet', type=str,
                         help="model name used for predicting")
-    parser.add_argument('--model', '-m', default='checkpoints/unet/best_model.pth', metavar='FILE',
+    parser.add_argument('--model', '-m', default='checkpoints/best_model.pth', metavar='FILE',
                         help='File in which the model is stored')
     parser.add_argument('--input', '-ip', default='dataset/data/2_2_2_downsampled/test', metavar='FILE',
                         help='Input File')
-    parser.add_argument("--image_sizex", default=384, type=int,
+    parser.add_argument("--image_sizex", default=128, type=int,
                         help="size of image in x axis")
-    parser.add_argument("--image_sizey", default=384, type=int,
+    parser.add_argument("--image_sizey", default=128, type=int,
                         help="size of image in y axis")
     parser.add_argument("--image_sizez", default=64, type=int,
                         help="size of image in z axis")
