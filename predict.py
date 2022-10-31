@@ -58,7 +58,7 @@ def predict(net, input_path, input_dim, device):
 def get_param_arguments():
     parser = argparse.ArgumentParser(description='Unet parammeters')
     parser.add_argument('--viz', '-v', action='store_true', help='Help tp visualise the images')
-    parser.add_argument("--model_name", default='unet', type=str,
+    parser.add_argument("--model_name", default='unetr', type=str,
                         help="model name used for predicting")
     parser.add_argument('--model', '-m', default='checkpoints/best_model.pth', metavar='FILE',
                         help='File in which the model is stored')
