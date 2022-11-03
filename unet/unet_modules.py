@@ -41,7 +41,7 @@ class Up(nn.Module):
 
     def forward(self, x, skip):
         x = self.up(x)
-        # skip = self.crop(skip, x)
+        skip = self.crop(skip, x)
         x = torch.cat([x, skip], dim=1)
         return self.conv(x)
 

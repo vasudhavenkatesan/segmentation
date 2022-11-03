@@ -89,3 +89,10 @@ def accuracy(test=None, reference=None, confusion_matrix=None):
     tp, fp, tn, fn = confusion_matrix.get_matrix()
 
     return float((tp + tn) / (tp + fp + tn + fn))
+
+
+def test():
+    y_true = [0, 0, 1, 0, 0]
+    y_pred = [0, 1, 1, 0, 1]
+    print(f'Accuracy - {accuracy(np.array(y_pred), np.array(y_true))}')
+    print(f'Dice score - {dice(np.array(y_pred), np.array(y_true))}')

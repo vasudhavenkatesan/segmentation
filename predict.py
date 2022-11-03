@@ -36,8 +36,9 @@ def predict(net, input_path, input_dim, device):
         # 0, 2, 3)
 
         with torch.no_grad():
-            val_outputs = sliding_window_inference(image, (64, 128, 128), 4, net, overlap=0.5)
-            val_outputs = torch.softmax(val_outputs, 1).cpu().numpy()
+            # val_outputs = sliding_window_inference(image, img_size, 1, net, overlap=0.5)
+            val_outputs = net(image)
+            # val_outputs = torch.softmax(val_outputs, 1).cpu().numpy()
             val_outputs = np.argmax(val_outputs, axis=1).astype(np.uint8)
             # prediction = net(image)
             plt.subplot(1, 3, 3)
@@ -58,17 +59,17 @@ def predict(net, input_path, input_dim, device):
 def get_param_arguments():
     parser = argparse.ArgumentParser(description='Unet parammeters')
     parser.add_argument('--viz', '-v', action='store_true', help='Help tp visualise the images')
-    parser.add_argument("--model_name", default='unetr', type=str,
+    parser.add_argument('-model_name', default='unet', type=str,
                         help="model name used for predicting")
-    parser.add_argument('--model', '-m', default='checkpoints/best_model.pth', metavar='FILE',
+    parser.add_argument('--model', '-m', default='checkpoints/unet/best_model_unet.pth', metavar='FILE',
                         help='File in which the model is stored')
     parser.add_argument('--input', '-ip', default='dataset/data/2_2_2_downsampled/test', metavar='FILE',
                         help='Input File')
-    parser.add_argument("--image_sizex", default=128, type=int,
+    parser.add_argument('--image_sizex', default=128, type=int,
                         help="size of image in x axis")
-    parser.add_argument("--image_sizey", default=128, type=int,
+    parser.add_argument('--image_sizey', default=128, type=int,
                         help="size of image in y axis")
-    parser.add_argument("--image_sizez", default=64, type=int,
+    parser.add_argument('--image_sizez', default=64, type=int,
                         help="size of image in z axis")
     return parser.parse_args()
 
