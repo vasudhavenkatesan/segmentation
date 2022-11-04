@@ -15,6 +15,7 @@ logger = config.get_logger()
 
 
 def predict(net, input_path, input_dim, device):
+    net.to(device)
     net.eval()
     plt.figure('Segmentation', (18, 6))
 
@@ -25,7 +26,7 @@ def predict(net, input_path, input_dim, device):
     dice_loss = 0.0
     accuracy_score = 0.0
     for index, batch in enumerate(dataloader):
-        image = batch[0].unsqueeze(0)
+        image = batch[0].unsqueeze(0).to(device=device, dtype=torch.float32)
         gt = batch[1].cpu().numpy()
         plt.subplot(1, 3, 1)
         plt.title(f'Image')
@@ -37,7 +38,7 @@ def predict(net, input_path, input_dim, device):
 
         with torch.no_grad():
             # val_outputs = sliding_window_inference(image, img_size, 1, net, overlap=0.5)
-            val_outputs = net(image)
+            val_outputs = net(image).cpu()
             # val_outputs = torch.softmax(val_outputs, 1).cpu().numpy()
             val_outputs = np.argmax(val_outputs, axis=1).astype(np.uint8)
             # prediction = net(image)
