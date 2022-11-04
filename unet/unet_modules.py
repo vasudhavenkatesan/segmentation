@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torchvision as vision
+from monai.transforms.croppad.array import CenterSpatialCrop
 
 
 class DoubleConvolution(nn.Module):
@@ -46,8 +47,8 @@ class Up(nn.Module):
         return self.conv(x)
 
     def crop(self, enc_ftrs, x):
-        _, _, _, H, W = x.shape
-        enc_ftrs = vision.transforms.CenterCrop([H, W])(enc_ftrs)
+        _, _, D, H, W = x.shape
+        enc_ftrs = CenterSpatialCrop([-1, D, H, W])(enc_ftrs)
         return enc_ftrs
 
 
