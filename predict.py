@@ -27,25 +27,27 @@ def predict(net, input_path, input_dim, device):
     accuracy_score = 0.0
     for index, batch in enumerate(dataloader):
         image = batch[0].unsqueeze(0).to(device=device, dtype=torch.float32)
-        gt = batch[1].cpu().numpy()
+        gt = batch[1].to(device=device, dtype=torch.int64)
+        plot_gt = batch[1].cpu().numpy()
         plt.subplot(1, 3, 1)
         plt.title(f'Image')
         plt.imshow(batch[0][-1, 12, :, :], cmap="gray")
         plt.subplot(1, 3, 2)
         plt.title(f'Mask')
-        plt.imshow(gt[-1, 12, :, :], cmap="gray")
+        plt.imshow(plot_gt[-1, 12, :, :], cmap="gray")
         # 0, 2, 3)
 
         with torch.no_grad():
-            # val_outputs = sliding_window_inference(image, img_size, 1, net, overlap=0.5)
-            val_outputs = net(image).cpu()
+            val_outputs = sliding_window_inference(image, img_size, 1, net, overlap=0.5)
+            # val_outputs = net(image).cpu().numpy()
             # val_outputs = torch.softmax(val_outputs, 1).cpu().numpy()
-            val_outputs = np.argmax(val_outputs, axis=1).astype(np.uint8)
+            val_outputs = torch.argmax(val_outputs, axis=1)
             # prediction = net(image)
             plt.subplot(1, 3, 3)
             plt.title('Predicted Mask')
             # pred_for_plot = prediction.argmax(dim=1)
-            plt.imshow(val_outputs[-1, 12, :, :], cmap='gray')
+            plot_out = val_outputs.cpu().numpy()
+            plt.imshow(plot_out[-1, 12, :, :], cmap='gray')
             dice_loss += dice(test=val_outputs, reference=gt)
             accuracy_score += accuracy(test=val_outputs, reference=gt)
             plt.savefig('Segmentation')
@@ -60,9 +62,9 @@ def predict(net, input_path, input_dim, device):
 def get_param_arguments():
     parser = argparse.ArgumentParser(description='Unet parammeters')
     parser.add_argument('--viz', '-v', action='store_true', help='Help tp visualise the images')
-    parser.add_argument('-model_name', default='unet', type=str,
+    parser.add_argument('-model_name', default='unetr', type=str,
                         help="model name used for predicting")
-    parser.add_argument('--model', '-m', default='checkpoints/unet/best_model_unet.pth', metavar='FILE',
+    parser.add_argument('--model', '-m', default='checkpoints/best_model_unetr.pth', metavar='FILE',
                         help='File in which the model is stored')
     parser.add_argument('--input', '-ip', default='dataset/data/2_2_2_downsampled/test', metavar='FILE',
                         help='Input File')
