@@ -34,7 +34,7 @@ class UNET(nn.Module):
 
 
 def test():
-    x = torch.randn((1, 1, 16, 256, 256))
+    x = torch.randn((1, 1, 66, 506, 506))
     model = UNET(n_channels=1, n_classes=2)
     model.to(device)
     preds = model(x)

@@ -39,6 +39,8 @@ def get_param_arguments():
                         help="size of image in y axis")
     parser.add_argument("--image_sizez", default=64, type=int,
                         help="size of image in z axis")
+    parser.add_argument("--mask_type", default="h5", type=str,
+                        help="Type of mask - h5 or nrrd")
     parser.add_argument("--load_cp", default=False, type=bool,
                         help="Load model from check point ")
     parser.add_argument("--save_cp", default=True, type=bool,
@@ -64,7 +66,8 @@ def main():
         training_fn(model=model, device=device, epochs=param_arg.epochs,
                     batch_size=param_arg.batch_size,
                     learning_rate=param_arg.learning_rate, valiation_percent=param_arg.validation_perc,
-                    input_dim=img_size, load_checkpoint=param_arg.load_cp, model_name=param_arg.model_name)
+                    input_dim=img_size, load_checkpoint=param_arg.load_cp, model_name=param_arg.model_name,
+                    mask_type=param_arg.mask_type)
     except:
         logger.exception('Got exception on main handler')
         raise

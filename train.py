@@ -34,9 +34,10 @@ def training_fn(model,
                 learning_rate: float = 1e-3,
                 valiation_percent=0.1,
                 load_checkpoint: bool = False,
-                save_checkpoint: bool = True):
+                save_checkpoint: bool = True,
+                mask_type="h5"):
     # create dataset
-    dataset = hdf5.Hdf5Dataset(data_file_path, reqd_image_dim=input_dim, contains_mask=True)
+    dataset = hdf5.Hdf5Dataset(data_file_path, reqd_image_dim=input_dim, contains_mask=True, mask_file_type=mask_type)
 
     # create training and validation dataset
     n_dataset = dataset.__len__()

@@ -13,7 +13,7 @@ from augmentation.transforms import *
 def get_file_list_from_dir(filepath):
     p = Path(filepath)
     assert (p.is_dir())
-    files = list(p.glob('**/*img.h5'))
+    files = list(p.glob('**/*.h5'))
     if len(files) < 1:
         logging.debug('Could not find hdf5 datasets')
         raise RuntimeError('No hdf5 datasets found')
@@ -74,7 +74,7 @@ class Hdf5Dataset(Dataset):
                     subgroup = group['0']
                     label = torch.from_numpy(np.array(subgroup['VoxelData']).astype(np.float32))
             elif self.mask_file_type == "nrrd":
-                mask = self.dirpath + '/' + file.name.rpartition('rec')[0] + 'rec.nrrd'
+                mask = self.dirpath + '/' + 'pred_' + file.name.rpartition('rec')[0] + 'rec.nrrd'
                 filedata = nrrd.read(mask)
                 print(filedata[0])
                 print(f'array 1 {filedata[1]}')
@@ -99,6 +99,7 @@ class Hdf5Dataset(Dataset):
 
 
 def test():
-    dataset = Hdf5Dataset(config.dataset_path, reqd_image_dim=[48, 48, 48], contains_mask=True,
+    filepath = '../' + config.dataset_path
+    dataset = Hdf5Dataset(filepath, reqd_image_dim=[48, 48, 48], contains_mask=True,
                           mask_file_type="nrrd")
     print(dataset.__getitem__(0))
