@@ -1,13 +1,19 @@
+import os
+from glob import glob
 from pathlib import Path
 
 import h5py
+import itk
 import nrrd
 import logging
+import tqdm
+from skimage.transform import rescale
 from torchvision import transforms
 from torch.utils.data import Dataset
-from config import max_image_dim
 import config
 from augmentation.transforms import *
+from torch.utils.data import DataLoader
+from utils import plot_image
 
 
 def get_file_list_from_dir(filepath):
@@ -41,9 +47,11 @@ class Hdf5Dataset(Dataset):
     def __getitem__(self, index):
         # lazy loading of data
         image, label = self.get_image_and_label(self, index)
-        # image, label = self.rand_crop(image, label)
-        # if not self.is_test:
+
+        if not self.is_test:
+            image, label = self.rand_crop(image, label)
         #     image, label = resize_image(self.reqd_dim, image, label)
+
         image = self.transform_norm(image)
         return image, label
 
@@ -76,9 +84,8 @@ class Hdf5Dataset(Dataset):
             elif self.mask_file_type == "nrrd":
                 mask = self.dirpath + '/' + 'pred_' + file.name.rpartition('rec')[0] + 'rec.nrrd'
                 filedata = nrrd.read(mask)
-                print(filedata[0])
-                print(f'array 1 {filedata[1]}')
-                # label = torch.from_numpy(np.array(filedata[0]))
+                label = torch.from_numpy(np.array(filedata[0], dtype=np.float32))
+                label = label > 0
                 # print(label.shape)
 
         logging.info(f'Loaded image {id} - {file}')
@@ -98,8 +105,28 @@ class Hdf5Dataset(Dataset):
         return mean, std
 
 
-def test():
+def downsample_data():
     filepath = '../' + config.dataset_path
-    dataset = Hdf5Dataset(filepath, reqd_image_dim=[48, 48, 48], contains_mask=True,
-                          mask_file_type="nrrd")
-    print(dataset.__getitem__(0))
+
+    list_of_all_mask_files = glob(os.path.join(filepath, '*.nrrd'))
+    for path_mask in tqdm.tqdm(list_of_all_mask_files):
+        export_folder = path_mask.rpartition('pred_')[0] + 'downsampled_mask'
+        if not os.path.isdir(export_folder):
+            os.makedirs(export_folder)
+        mask = itk.GetArrayFromImage(itk.imread(path_mask))
+        downsampled_mask = rescale(image=mask, scale=(1, 0.5, 0.5), order=0)
+        output_filename = os.path.join(export_folder, f'{os.path.basename(path_mask)[:-4]}h5')
+
+        itk.imwrite(itk.GetImageFromArray(downsampled_mask), output_filename)
+
+
+def test():
+    # filepath = '../' + config.dataset_path
+    # dataset = Hdf5Dataset(filepath, reqd_image_dim=[128, 832, 832], contains_mask=True,
+    #                       mask_file_type="nrrd")
+    # print(dataset.__getitem__(0))
+    downsample_data()
+
+
+if __name__ == "__main__":
+    downsample_data()
