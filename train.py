@@ -143,34 +143,34 @@ def training_fn(model,
 
             val_dice_loss += dice(test=pred.argmax(1), reference=gt)
             accuracy_score += accuracy(test=pred.argmax(1), reference=gt)
-        print(f'Validation loss : {val_loss:.4f}')
-        print(f'Accuracy - {accuracy_score / n_val}, dice score - {val_dice_loss / n_val}')
-        logger.info(f'Validation loss : {val_loss}')
-        writer.add_scalar("Validation Loss", val_loss, epoch)
-        writer.add_scalar('Val Accuracy', (accuracy_score / n_val), epoch)
-        writer.add_scalar('Val Dice score', (val_dice_loss / n_val), epoch)
-        if n_val != 0:
+        if n_val > 0:
+            print(f'Validation loss : {val_loss:.4f}')
+            print(f'Accuracy - {accuracy_score / n_val}, dice score - {val_dice_loss / n_val}')
+            logger.info(f'Validation loss : {val_loss}')
+            writer.add_scalar("Validation Loss", val_loss, epoch)
+            writer.add_scalar('Val Accuracy', (accuracy_score / n_val), epoch)
+            writer.add_scalar('Val Dice score', (val_dice_loss / n_val), epoch)
             save_metrics(epoch, val_loss / i, val_dice_loss / i, accuracy_score / i, checkpoint_handler, 'validation')
         torch.cuda.empty_cache()
         writer.flush()
 
-    # save metrics checkpoint
-    path = checkpoint_handler.generate_checkpoint_path(path2save=checkpoint_path)
-    checkpoint_handler.save_checkpoint(checkpoint_path + '/metrics.pth', iteration=epoch, model=model,
-                                       optimizer=optimizer)
+        # save metrics checkpoint
+        path = checkpoint_handler.generate_checkpoint_path(path2save=checkpoint_path)
+        checkpoint_handler.save_checkpoint(checkpoint_path + '/metrics.pth', iteration=epoch, model=model,
+                                           optimizer=optimizer)
 
-    # save checkpoint
-    if save_checkpoint:
-        model_name = 'best_model.pth'
-        model_path = os.path.join(checkpoint_path, model_name)
-        if os.path.exists(model_path):  # checking if there is a file with this name
-            os.remove(model_path)  # deleting the file
-        checkpoint = model.state_dict()
-        torch.save(checkpoint, model_path)
-        best_validation_loss = val_loss
-        logger.info(f'Best checkpoint at epoch - {epoch} saved')
-        logger.info(f'Best validation loss - {best_validation_loss}')
+        # save checkpoint
+        if save_checkpoint:
+            model_name = 'best_model_' + model_name + '.pth'
+            model_path = os.path.join(checkpoint_path, model_name)
+            if os.path.exists(model_path):  # checking if there is a file with this name
+                os.remove(model_path)  # deleting the file
+            checkpoint = model.state_dict()
+            torch.save(checkpoint, model_path)
+            best_validation_loss = val_loss
+            logger.info(f'Best checkpoint at epoch - {epoch} saved')
+            logger.info(f'Best validation loss - {best_validation_loss}')
 
-    writer.close()
+        writer.close()
 
     logger.info('Training completed')

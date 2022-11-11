@@ -4,9 +4,9 @@ from scipy.ndimage import zoom
 
 
 def resize_image(reqd_dim, image, label):
-    resize_values = (reqd_dim[0] / image.shape[0],
-                     reqd_dim[1] / image.shape[1],
-                     reqd_dim[2] / image.shape[2])
+    resize_values = (reqd_dim[0] // image.shape[0],
+                     reqd_dim[1] // image.shape[1],
+                     reqd_dim[2] // image.shape[2])
     img = torch.from_numpy(zoom(image, resize_values, mode='nearest').astype(np.float32))
     lbl = np.asarray(zoom(label, resize_values, order=0, mode='nearest'))
     return img, lbl
@@ -33,12 +33,13 @@ class RandomCrop3D:
             return None, None
 
     @staticmethod
-    def _crop(x, slice_d, slice_w, slice_h):
+    def _crop(x, slice_d, slice_h, slice_w):
         return x[slice_d[0]:slice_d[1], slice_h[0]:slice_h[1], slice_w[0]:slice_w[1]]
 
 
 def test():
-    crop_dim = [64, 256, 256]
-    image_dim = [90, 512, 512]
-    rand_crop = RandomCrop3D(image_dim, crop_dim)
-    print(rand_crop)
+    crop_dim = [64, 128, 128]
+    for _ in range(100):
+        img = torch.randn((90, 400, 506))
+        rand_crop = RandomCrop3D(crop_dim)
+        print(rand_crop(img, img))

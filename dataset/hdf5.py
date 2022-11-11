@@ -10,7 +10,7 @@ import tqdm
 from skimage.transform import rescale
 from torchvision import transforms
 from torch.utils.data import Dataset
-import config
+# import config
 from augmentation.transforms import *
 from torch.utils.data import DataLoader
 from utils import plot_image
@@ -19,7 +19,7 @@ from utils import plot_image
 def get_file_list_from_dir(filepath):
     p = Path(filepath)
     assert (p.is_dir())
-    files = list(p.glob('**/*.h5'))
+    files = list(p.glob('embl*.h5'))
     if len(files) < 1:
         logging.debug('Could not find hdf5 datasets')
         raise RuntimeError('No hdf5 datasets found')
@@ -73,21 +73,22 @@ class Hdf5Dataset(Dataset):
         with h5py.File(file, "r") as image_file:
             group = image_file['ITKImage']
             subgroup = group['0']
-            image = torch.from_numpy(np.array(subgroup['VoxelData']))
+            image = torch.from_numpy(np.array(subgroup['VoxelData'], dtype=np.float32))
         if self.contains_mask:
             if self.mask_file_type == "h5":
-                mask = self.dirpath + '/' + file.name.rpartition('img')[0] + 'mask.h5'
+                mask = self.dirpath + '/' + file.name.rpartition('rec')[0] + 'rec.h5'
                 with h5py.File(mask, "r") as mask_file:
                     group = mask_file['ITKImage']
                     subgroup = group['0']
-                    label = torch.from_numpy(np.array(subgroup['VoxelData']).astype(np.float32))
+                    label = torch.from_numpy(np.array(subgroup['VoxelData'], dtype=np.float32))
+
             elif self.mask_file_type == "nrrd":
                 mask = self.dirpath + '/' + 'pred_' + file.name.rpartition('rec')[0] + 'rec.nrrd'
                 filedata = nrrd.read(mask)
                 label = torch.from_numpy(np.array(filedata[0], dtype=np.float32))
-                label = label > 0
-                # print(label.shape)
 
+                # print(label.shape)
+        label = label > 0
         logging.info(f'Loaded image {id} - {file}')
         return image, label
 
@@ -106,7 +107,7 @@ class Hdf5Dataset(Dataset):
 
 
 def downsample_data():
-    filepath = '../' + config.dataset_path
+    filepath = 'dataset/data/test'
 
     list_of_all_mask_files = glob(os.path.join(filepath, '*.nrrd'))
     for path_mask in tqdm.tqdm(list_of_all_mask_files):
