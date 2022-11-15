@@ -14,7 +14,7 @@ def resize_image(reqd_dim, image, label):
 
 class RandomCrop3D:
     def __init__(self, crop_sz):
-        self.crop_sz = tuple(crop_sz)
+        self.crop_sz = crop_sz
 
     def __call__(self, image, mask):
         self.img_sz = image.shape

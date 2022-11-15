@@ -69,15 +69,15 @@ def training_fn(model,
             model.load_state_dict(checkpoint)
 
     best_validation_loss = 10.0
-
+    parallel_net = nn.DataParallel(model, gpu_ids=[0, 1, 2, 3])
     for epoch in tqdm.tqdm(range(epochs)):
         logger.info('Epoch {}/{}'.format(epoch + 1, epochs))
         logger.info('-' * 15)
         print('Epoch {}/{}'.format(epoch + 1, epochs))
         print('-' * 10)
 
-        model.to(device)
-        model.train()
+        # model.to(device)
+        parallel_net.train()
 
         running_loss = 0.0
         dice_loss = 0.0
@@ -87,13 +87,13 @@ def training_fn(model,
         # training
         for index, batch in enumerate(train_dataloader):
 
-            image = batch[0].unsqueeze(1).to(device=device, dtype=torch.float32)
+            image = batch[0].unsqueeze(1).to(device=0, dtype=torch.float32)
             print(np.unique(batch[1]))
-            gt = batch[1].to(device=device, dtype=torch.int64)
+            gt = batch[1].to(device=0, dtype=torch.int64)
             optimizer.zero_grad()
 
             with autocast():
-                pred = model(image)
+                pred = parallel_net(image)
                 loss = criterion(pred, gt)
 
             # Backpropagation
@@ -122,24 +122,24 @@ def training_fn(model,
 
         # validation
         logger.info('Validation step')
-        model.eval()
+        parallel_net.eval()
         val_loss = 0.0
         accuracy_score = 0.0
         i = 0
         for index, batch in enumerate(val_dataloader):
-            image = batch[0].unsqueeze(1).to(device=device, dtype=torch.float32)
-            gt = batch[1].to(device=device, dtype=torch.long)
+            image = batch[0].unsqueeze(1).to(device=0, dtype=torch.float32)
+            gt = batch[1].to(device=0, dtype=torch.long)
 
             with torch.no_grad():
                 # predict the mask
-                pred = model(image)
+                pred = parallel_net(image)
                 loss = criterion(pred, gt)
 
                 val_loss += loss.mean()
                 i += 1
 
                 if epoch == (epochs - 1):
-                    plot_image(batch[0], batch[1], pred, 'val', 0)
+                    plot_image(batch[0], batch[1], pred, 'val', index)
 
             val_dice_loss += dice(test=pred.argmax(1), reference=gt)
             accuracy_score += accuracy(test=pred.argmax(1), reference=gt)
@@ -161,8 +161,8 @@ def training_fn(model,
 
         # save checkpoint
         if save_checkpoint:
-            model_name = 'best_model_' + model_name + '.pth'
-            model_path = os.path.join(checkpoint_path, model_name)
+            best_model_name = 'best_model_' + model_name + '.pth'
+            model_path = os.path.join(checkpoint_path, best_model_name)
             if os.path.exists(model_path):  # checking if there is a file with this name
                 os.remove(model_path)  # deleting the file
             checkpoint = model.state_dict()

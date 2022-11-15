@@ -54,7 +54,7 @@ def main():
     logger = config.get_logger()
     in_channels = param_arg.n_channels
     out_channels = param_arg.n_classes
-    img_size = [param_arg.image_sizez, param_arg.image_sizex, param_arg.image_sizey]
+    img_size = tuple(param_arg.image_sizez, param_arg.image_sizex, param_arg.image_sizey)
     logger.debug(f'Using device - {device}')
     if (param_arg.model_name == "unetr"):
         model = UNETR(in_channels, out_channels, img_size)

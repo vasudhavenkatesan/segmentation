@@ -50,7 +50,7 @@ def predict(net, input_path, input_dim, device):
             plt.imshow(plot_out[-1, 12, :, :], cmap='gray')
             dice_loss += dice(test=val_outputs, reference=gt)
             accuracy_score += accuracy(test=val_outputs, reference=gt)
-            plt.savefig('Segmentation')
+            plt.savefig(f'Segmentation_{index}')
     print('saving plot ---------')
     print(f'Accuracy - {accuracy_score / n_preds}, dice score - {dice_loss / n_preds}')
     plt.savefig('Segmentation')
