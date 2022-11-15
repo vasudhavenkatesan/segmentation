@@ -67,9 +67,9 @@ def training_fn(model,
         if os.path.exists(checkpoint_path):
             checkpoint = torch.load(checkpoint_path)
             model.load_state_dict(checkpoint)
-
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     best_validation_loss = 10.0
-    parallel_net = nn.DataParallel(model, gpu_ids=[0, 1, 2, 3])
+    parallel_net = nn.DataParallel(model, device_ids=[0, 1, 2, 3])
     for epoch in tqdm.tqdm(range(epochs)):
         logger.info('Epoch {}/{}'.format(epoch + 1, epochs))
         logger.info('-' * 15)
@@ -87,9 +87,9 @@ def training_fn(model,
         # training
         for index, batch in enumerate(train_dataloader):
 
-            image = batch[0].unsqueeze(1).to(device=0, dtype=torch.float32)
-            print(np.unique(batch[1]))
-            gt = batch[1].to(device=0, dtype=torch.int64)
+            image = batch[0].unsqueeze(1).to(device=device, dtype=torch.float32)
+            gt = batch[1].to(device=device, dtype=torch.int64)
+            parallel_net.to(device)
             optimizer.zero_grad()
 
             with autocast():
@@ -127,8 +127,8 @@ def training_fn(model,
         accuracy_score = 0.0
         i = 0
         for index, batch in enumerate(val_dataloader):
-            image = batch[0].unsqueeze(1).to(device=0, dtype=torch.float32)
-            gt = batch[1].to(device=0, dtype=torch.long)
+            image = batch[0].unsqueeze(1).to(device=device, dtype=torch.float32)
+            gt = batch[1].to(device=device, dtype=torch.long)
 
             with torch.no_grad():
                 # predict the mask
