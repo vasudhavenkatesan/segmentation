@@ -8,14 +8,15 @@ from monai.visualize import plot_2d_or_3d_image
 
 np.set_printoptions(threshold=sys.maxsize)
 
-logger = config.get_logger()
+
+# logger = config.get_logger()
 
 
 def plot_image(image, gt, pred, type='val', i=0):
     date = datetime.now().strftime("%d_%m_%I_%M_%S_%p")
     filename = 'Segm_' + type + '_' + str(i) + '_' + date
 
-    logger.info(f'Plotting image -  {filename} saved!')
+    # logger.info(f'Plotting image -  {filename} saved!')
     plt.figure(filename, (18, 6))
     plt.subplot(1, 3, 1)
     plt.title(f'Image')

@@ -12,34 +12,24 @@ def resize_image(reqd_dim, image, label):
     return img, lbl
 
 
+# Returns the indices of random crop
 class RandomCrop3D:
     def __init__(self, crop_sz):
         self.crop_sz = crop_sz
 
-    def __call__(self, image, mask):
-        self.img_sz = image.shape
+    def __call__(self, original_img_sz):
+        self.img_sz = original_img_sz
         slice_dhw = [self._get_slice(i, k) for i, k in zip(self.img_sz, self.crop_sz)]
-        # slice_dhw = [[0, 16], [0, 256], [0, 256]]
-        img = self._crop(image, *slice_dhw)
-        msk = self._crop(mask, *slice_dhw)
-        return img, msk
+        return slice_dhw
 
     @staticmethod
     def _get_slice(sz, crop_sz):
-        try:
-            lower_bound = torch.randint(sz - crop_sz, (1,)).item()
-            return lower_bound, lower_bound + crop_sz
-        except:
-            return None, None
-
-    @staticmethod
-    def _crop(x, slice_d, slice_h, slice_w):
-        return x[slice_d[0]:slice_d[1], slice_h[0]:slice_h[1], slice_w[0]:slice_w[1]]
+        lower_bound = torch.randint(sz - crop_sz, (1,)).item()
+        return lower_bound, lower_bound + crop_sz
 
 
 def test():
-    crop_dim = [64, 128, 128]
-    for _ in range(100):
-        img = torch.randn((90, 400, 506))
-        rand_crop = RandomCrop3D(crop_dim)
-        print(rand_crop(img, img))
+    crop_dim = (67, 127, 127)
+    img = (68, 128, 128)
+    rand_crop = RandomCrop3D(crop_dim)
+    print(rand_crop(img))

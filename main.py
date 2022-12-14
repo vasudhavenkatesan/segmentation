@@ -17,6 +17,8 @@ from datetime import datetime
 from utils import plot_image
 import numpy as np
 
+from dataset import hdf5
+
 
 def get_param_arguments():
     parser = argparse.ArgumentParser(description="Unet parammeters")
@@ -25,7 +27,7 @@ def get_param_arguments():
                         help="Batch size - Number of datasets in each training batch")
     parser.add_argument("--learning_rate", type=float, default=3e-5,
                         help="Learning rate for optimizer")
-    parser.add_argument("--validation_perc", type=float, default=0.1,
+    parser.add_argument("--validation_perc", type=float, default=0.5,
                         help="Percent of validation set")
     parser.add_argument("--n_channels", type=int, default=1,
                         help="Number of channels in the image")
@@ -33,9 +35,9 @@ def get_param_arguments():
                         help="Number of output classes")
     parser.add_argument("--model_name", default="unetr", type=str,
                         help="model name used for training")
-    parser.add_argument("--image_sizex", default=256, type=int,
+    parser.add_argument("--image_sizex", default=128, type=int,
                         help="size of image in x axis")
-    parser.add_argument("--image_sizey", default=256, type=int,
+    parser.add_argument("--image_sizey", default=128, type=int,
                         help="size of image in y axis")
     parser.add_argument("--image_sizez", default=64, type=int,
                         help="size of image in z axis")
@@ -54,7 +56,7 @@ def main():
     logger = config.get_logger()
     in_channels = param_arg.n_channels
     out_channels = param_arg.n_classes
-    img_size = tuple(param_arg.image_sizez, param_arg.image_sizex, param_arg.image_sizey)
+    img_size = tuple([param_arg.image_sizez, param_arg.image_sizex, param_arg.image_sizey])
     logger.debug(f'Using device - {device}')
     if (param_arg.model_name == "unetr"):
         model = UNETR(in_channels, out_channels, img_size)

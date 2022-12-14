@@ -81,7 +81,6 @@ def training_fn(model,
 
         running_loss = 0.0
         dice_loss = 0.0
-        val_dice_loss = 0.0
         accuracy_score = 0.0
         n = n_train / batch_size
         # training
@@ -115,7 +114,6 @@ def training_fn(model,
         writer.add_scalar('Accuracy', (accuracy_score / n), epoch)
         writer.add_scalar('Dice score', (dice_loss / n), epoch)
 
-        save_metrics(epoch, (running_loss / n), 0, 0, checkpoint_handler, 'train')
         print(f'Epoch : {epoch}, running loss : {running_loss}, loss: {(running_loss / n):.4f}')
         print(f'Accuracy : {accuracy_score / n}, Dice score:{dice_loss / n}')
         logger.info(f'Epoch : {epoch}, running loss : {running_loss}, loss: {(running_loss / n)}')
@@ -124,6 +122,7 @@ def training_fn(model,
         logger.info('Validation step')
         parallel_net.eval()
         val_loss = 0.0
+        val_dice_loss = 0.0
         accuracy_score = 0.0
         i = 0
         for index, batch in enumerate(val_dataloader):
@@ -150,7 +149,6 @@ def training_fn(model,
             writer.add_scalar("Validation Loss", val_loss, epoch)
             writer.add_scalar('Val Accuracy', (accuracy_score / n_val), epoch)
             writer.add_scalar('Val Dice score', (val_dice_loss / n_val), epoch)
-            save_metrics(epoch, val_loss / i, val_dice_loss / i, accuracy_score / i, checkpoint_handler, 'validation')
         torch.cuda.empty_cache()
         writer.flush()
 
@@ -160,14 +158,14 @@ def training_fn(model,
                                            optimizer=optimizer)
 
         # save checkpoint
-        if save_checkpoint:
+        if save_checkpoint and best_validation_loss > val_dice_loss:
+            best_validation_loss = val_dice_loss
             best_model_name = 'best_model_' + model_name + '.pth'
             model_path = os.path.join(checkpoint_path, best_model_name)
             if os.path.exists(model_path):  # checking if there is a file with this name
                 os.remove(model_path)  # deleting the file
             checkpoint = model.state_dict()
             torch.save(checkpoint, model_path)
-            best_validation_loss = val_loss
             logger.info(f'Best checkpoint at epoch - {epoch} saved')
             logger.info(f'Best validation loss - {best_validation_loss}')
 
