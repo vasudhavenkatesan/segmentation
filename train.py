@@ -117,6 +117,7 @@ def training_fn(model,
         print(f'Epoch : {epoch}, running loss : {running_loss}, loss: {(running_loss / n):.4f}')
         print(f'Accuracy : {accuracy_score / n}, Dice score:{dice_loss / n}')
         logger.info(f'Epoch : {epoch}, running loss : {running_loss}, loss: {(running_loss / n)}')
+        logger.info(f'Dice score : {dice_loss / n}')
 
         # validation
         logger.info('Validation step')
@@ -143,9 +144,11 @@ def training_fn(model,
             val_dice_loss += dice(test=pred.argmax(1), reference=gt)
             accuracy_score += accuracy(test=pred.argmax(1), reference=gt)
         if n_val > 0:
+            n_val = n_val / batch_size
             print(f'Validation loss : {val_loss:.4f}')
             print(f'Accuracy - {accuracy_score / n_val}, dice score - {val_dice_loss / n_val}')
             logger.info(f'Validation loss : {val_loss}')
+            logger.info(f'Dice score : {val_dice_loss / n_val}')
             writer.add_scalar("Validation Loss", val_loss, epoch)
             writer.add_scalar('Val Accuracy', (accuracy_score / n_val), epoch)
             writer.add_scalar('Val Dice score', (val_dice_loss / n_val), epoch)

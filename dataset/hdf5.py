@@ -67,9 +67,12 @@ class Hdf5Dataset(Dataset):
         else:
             image_shape = get_image_shape(path_to_image)
             crop_size = self.rand_crop(image_shape)
-            image = load_file_chunkwise(path_to_image, crop_size)
             path_to_label = self.dirpath + '/pred_' + path_to_image.name.rpartition('rec')[0] + 'rec.h5'
             label = load_file_chunkwise(path_to_label, crop_size)
+            while label.max() == 0:
+                crop_size = self.rand_crop(image_shape)
+                label = load_file_chunkwise(path_to_label, crop_size)
+            image = load_file_chunkwise(path_to_image, crop_size)
             label = (label > 0).float()
             logging.info(f'Loaded image and label chunkwise- {path_to_image}')
 
