@@ -6,7 +6,7 @@ from datetime import datetime
 # smaller images(h5) -"dataset/data/2_2_2_downsampled/train"
 # larger images(nrrd) - "dataset/data/nrrd_data/train"
 
-dataset_path = os.path.join("dataset", "data", "test_small")
+dataset_path = "/misc/lmbssd/venkatev/data/data/train"
 
 output_path = os.path.join("output")
 

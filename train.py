@@ -9,10 +9,8 @@ from torch.cuda.amp import autocast
 from dataset import hdf5
 from utils import plot_image, plot_3d_image
 from eval.metrics import dice, accuracy
-from eval.evaluate import save_metrics
 import config
 import tqdm
-import numpy as np
 from pytorchcheckpoint.checkpoint import CheckpointHandler
 
 # Logger
@@ -145,13 +143,15 @@ def training_fn(model,
             accuracy_score += accuracy(test=pred.argmax(1), reference=gt)
         if n_val > 0:
             n_val = n_val / batch_size
+            val_dice_loss = val_dice_loss / n_val
+            accuracy_score = accuracy_score / n_val
             print(f'Validation loss : {val_loss:.4f}')
-            print(f'Accuracy - {accuracy_score / n_val}, dice score - {val_dice_loss / n_val}')
+            print(f'Accuracy - {accuracy_score}, dice score - {val_dice_loss}')
             logger.info(f'Validation loss : {val_loss}')
-            logger.info(f'Dice score : {val_dice_loss / n_val}')
+            logger.info(f'Validation Dice score : {val_dice_loss}')
             writer.add_scalar("Validation Loss", val_loss, epoch)
-            writer.add_scalar('Val Accuracy', (accuracy_score / n_val), epoch)
-            writer.add_scalar('Val Dice score', (val_dice_loss / n_val), epoch)
+            writer.add_scalar('Val Accuracy', accuracy_score, epoch)
+            writer.add_scalar('Val Dice score', val_dice_loss, epoch)
         torch.cuda.empty_cache()
         writer.flush()
 

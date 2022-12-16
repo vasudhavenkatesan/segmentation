@@ -41,7 +41,7 @@ def get_image_shape(path_to_image):
 
 
 class Hdf5Dataset(Dataset):
-    def __init__(self, filepath, reqd_image_dim, contains_mask: bool = True, mask_file_type: str = "h5",
+    def __init__(self, filepath, reqd_image_dim, batch_size, contains_mask: bool = True, mask_file_type: str = "h5",
                  is_test: bool = False, max_images_per_iteration: int = 250):
         logging.info('Initialising dataset from HDF5 files')
         self.image_id = {}
@@ -69,12 +69,18 @@ class Hdf5Dataset(Dataset):
             crop_size = self.rand_crop(image_shape)
             path_to_label = self.dirpath + '/pred_' + path_to_image.name.rpartition('rec')[0] + 'rec.h5'
             label = load_file_chunkwise(path_to_label, crop_size)
-            while label.max() == 0:
+            counter = 0
+            while label.max() == 0 and counter < 50:
+                counter += 1
                 crop_size = self.rand_crop(image_shape)
+                print(f'Could not find image with foreground, taking another crop - {crop_size}')
+                # logging.info(f'Could not find image with foreground, taking another crop - {crop_size}')
                 label = load_file_chunkwise(path_to_label, crop_size)
+            if counter == 50:
+                self.__getitem__(0)
             image = load_file_chunkwise(path_to_image, crop_size)
             label = (label > 0).float()
-            logging.info(f'Loaded image and label chunkwise- {path_to_image}')
+            # logging.info(f'Loaded image and label chunkwise- {path_to_image}')
 
         image = self.transform_norm(image)
         return image, label
