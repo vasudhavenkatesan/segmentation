@@ -41,7 +41,7 @@ def get_image_shape(path_to_image):
 
 
 class Hdf5Dataset(Dataset):
-    def __init__(self, filepath, reqd_image_dim, batch_size, contains_mask: bool = True, mask_file_type: str = "h5",
+    def __init__(self, filepath, reqd_image_dim, contains_mask: bool = True, mask_file_type: str = "h5",
                  is_test: bool = False, max_images_per_iteration: int = 250):
         logging.info('Initialising dataset from HDF5 files')
         self.image_id = {}
@@ -60,11 +60,12 @@ class Hdf5Dataset(Dataset):
         ])
 
     def __getitem__(self, index):
-        random_image_index = np.random.random_integers(0, self.__len__() - 1)
-        path_to_image = self.image_id[random_image_index]
         if self.is_test:
-            image, label = self.get_full_image_and_label(path_to_image)
+            path_to_image = self.image_id[index]
+            image, label = self.get_full_image_and_label(self=self, path_to_image=path_to_image)
         else:
+            random_image_index = np.random.random_integers(0, self.__len__() - 1)
+            path_to_image = self.image_id[random_image_index]
             image_shape = get_image_shape(path_to_image)
             crop_size = self.rand_crop(image_shape)
             path_to_label = self.dirpath + '/pred_' + path_to_image.name.rpartition('rec')[0] + 'rec.h5'
