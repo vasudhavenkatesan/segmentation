@@ -60,7 +60,7 @@ def predict(net, input_path, input_dim, device):
 
         dice_loss += dice(test=val_outputs, reference=gt)
         accuracy_score += accuracy(test=val_outputs, reference=gt)
-        output_filename = os.path.join(export_folder, f'pred_{str(dataset.image_id[index]).split(chr(92))[-1]}.h5')
+        output_filename = os.path.join(export_folder, f'pred_{str(dataset.image_id[index]).split("/")[-1]}.h5')
         itk.imwrite(itk.GetImageFromArray(np.array(val_outputs[-1, :].cpu().numpy(), dtype=np.uint8)),
                     output_filename)
         plt.savefig(f'Segmentation_{index}')

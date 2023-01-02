@@ -2,6 +2,7 @@ import os.path
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, random_split
+from torch.nn.functional import one_hot
 from torch.optim import Adam
 from torch.utils.tensorboard import SummaryWriter
 from torch.cuda.amp import GradScaler
@@ -11,13 +12,14 @@ from utils import plot_image, plot_3d_image
 from eval.metrics import dice, accuracy
 import config
 import tqdm
+from monai.losses import DiceCELoss
 from pytorchcheckpoint.checkpoint import CheckpointHandler
 
 # Logger
 logger = config.get_logger()
 
-train_data_file_path = config.dataset_path + "train/"
-val_data_file_path = config.dataset_path + "validation/"
+train_data_file_path = config.dataset_path + "test_small/"
+val_data_file_path = config.dataset_path + "test_small/"
 
 checkpoint_path = config.checkpoint_dir
 
@@ -54,6 +56,7 @@ def training_fn(model,
 
     # specify loss functions, optimizers
     criterion = nn.CrossEntropyLoss(ignore_index=255, reduction='none')
+    dice_CE = DiceCELoss(squared_pred=True, smooth_nr=0.0, smooth_dr=1e-6)
     optimizer = Adam(model.parameters(), lr=learning_rate)
     # scheduler = MultiStepLR(optimizer, milestones=[50, 100, 150], gamma=0.1)
 
@@ -88,22 +91,24 @@ def training_fn(model,
         for index, batch in enumerate(train_dataloader):
             image = batch[0].unsqueeze(1).to(device=device, dtype=torch.float32)
             gt = batch[1].to(device=device, dtype=torch.int64)
+            # DiceCE expects same dimension for both pred and gt
+            one_hot_gt = one_hot(gt, num_classes=2).permute(0, 4, 1, 2, 3)
             parallel_net.to(device)
             optimizer.zero_grad()
 
             with autocast():
                 pred = parallel_net(image)
-                loss = criterion(pred, gt)
+                loss = dice_CE(pred, one_hot_gt)
 
             # Backpropagation
-            scaler.scale(loss.mean()).backward()
+            scaler.scale(loss).backward()
             scaler.unscale_(optimizer)
 
             # Since the gradients of optimizer's assigned params are unscaled, clips as usual:
-            torch.nn.utils.clip_grad_norm_(model.parameters(), 15)
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 10)
             scaler.step(optimizer)
 
-            running_loss += float(loss.mean())
+            running_loss += loss
             scaler.update()
 
             # plot in tensorboard
@@ -131,13 +136,14 @@ def training_fn(model,
         i = 0
         for index, batch in enumerate(val_dataloader):
             image = batch[0].unsqueeze(1).to(device=device, dtype=torch.float32)
-            gt = batch[1].to(device=device, dtype=torch.long)
+            gt = batch[1].to(device=device, dtype=torch.int64)
+            one_hot_gt = one_hot(gt, num_classes=2).permute(0, 4, 1, 2, 3)
 
             with torch.no_grad():
                 # predict the mask
                 pred = parallel_net(image)
-                loss = criterion(pred, gt)
-                val_loss += loss.mean()
+                loss = dice_CE(pred, one_hot_gt)
+                val_loss += loss
                 i += 1
 
             val_dice_loss += dice(test=pred.argmax(1), reference=gt)

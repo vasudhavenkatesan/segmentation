@@ -39,7 +39,7 @@ def plot_3d_image(image, gt, pred, loss, step, writer):
     plot_2d_or_3d_image(data=gt, step=step, writer=writer, frame_dim=-1, tag='GT')
     pred_for_label_1 = torch.sigmoid(pred[:, 1, :])
     plot_2d_or_3d_image(data=pred_for_label_1, step=step, writer=writer, frame_dim=-1, tag='Prediction')
-    plot_2d_or_3d_image(data=loss, step=step, writer=writer, frame_dim=-1, tag='Loss')
+    # plot_2d_or_3d_image(data=loss.item(), step=step, writer=writer, frame_dim=-1, tag='Loss')
 
 
 # import napari
